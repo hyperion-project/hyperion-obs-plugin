@@ -11,13 +11,21 @@
 #include "FlatBufferConnection.h"
 #include "Image.h"
 
+// Constants
+namespace {
+const char OBS_AUTHOR[] = "Hyperion-Project";
+const char OBS_MODULE_NAME[] = "hyperion-obs";
+const char OBS_DEFAULT_LOCALE[] = "en-US";
+const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
+} //End of constants
+
 struct hyperion_output
 {
 	obs_output_t *output = nullptr;
 	FlatBufferConnection* client = nullptr;
+	uint32_t width = 0;
+	uint32_t height = 0;
 	bool active = false;
-	int width = 0;
-	int height = 0;
 	pthread_mutex_t mutex;
 };
 
@@ -43,16 +51,16 @@ void hyperion_signal_stop(const char *msg, bool running)
 
 int Connect(void *data)
 {
-	hyperion_output *out_data = (hyperion_output*)data;
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 
-	out_data->client = new FlatBufferConnection("hyperion-obs", obs_data_get_string(settings, "Location"), 150, false, obs_data_get_int(settings, "Port"));
+	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, "Location"), FLATBUFFER_DEFAULT_PRIORITY, false, obs_data_get_int(settings, "Port"));
 	return 0;
 }
 
 static void Disconnect(void *data)
 {
-	hyperion_output *out_data = (hyperion_output*)data;
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	delete out_data->client;
 	out_data->client = nullptr;
 }
@@ -65,7 +73,7 @@ static const char *hyperion_output_getname(void *unused)
 
 static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
 {
-	hyperion_output *data = (hyperion_output*)bzalloc(sizeof(struct hyperion_output));
+	hyperion_output *data = static_cast<hyperion_output*>(bzalloc(sizeof(struct hyperion_output)));
 	data->output = output;
 
 	pthread_mutex_init_value(&data->mutex);
@@ -80,8 +88,8 @@ static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
 
 static void hyperion_output_destroy(void *data)
 {
-	hyperion_output *out_data = (hyperion_output*)data;
-	if (out_data)
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
+	if (out_data != nullptr)
 	{
 		pthread_mutex_destroy(&out_data->mutex);
 		bfree(out_data);
@@ -90,24 +98,19 @@ static void hyperion_output_destroy(void *data)
 
 static bool hyperion_output_start(void *data)
 {
-	hyperion_output *out_data = (hyperion_output*)data;
-	out_data->width = (int32_t)obs_output_get_width(out_data->output);
-	out_data->height = (int32_t)obs_output_get_height(out_data->output);
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
+	out_data->width = obs_output_get_width(out_data->output);
+	out_data->height = obs_output_get_height(out_data->output);
 	int ret = Connect(data);
 
 	struct video_scale_info conv;
 	conv.format = 	VIDEO_FORMAT_RGBA;
-	conv.width = (int32_t)obs_output_get_width(out_data->output);
-	conv.height = (int32_t)obs_output_get_height(out_data->output);
+	conv.width = obs_output_get_width(out_data->output);
+	conv.height = obs_output_get_height(out_data->output);
 
 	obs_output_set_video_conversion(out_data->output, &conv);
 
-	// video_t *video = obs_output_video(out_data->output);
-	// image.resize(width, height); // this is set_image_size
-	// set_image_size(video_output_get_width(video), video_output_get_width(video));
-
 	// enum video_format format = video_output_get_format(video);
-
 	// double video_frame_rate = video_output_get_frame_rate(video);
 
 	if (!obs_output_can_begin_data_capture(out_data->output, 0))
@@ -121,7 +124,7 @@ static bool hyperion_output_start(void *data)
 
 static void hyperion_output_stop(void *data, uint64_t ts)
 {
-	hyperion_output *out_data = (hyperion_output*)data;
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	UNUSED_PARAMETER(ts);
 
 	if(out_data->active)
@@ -135,16 +138,18 @@ static void hyperion_output_stop(void *data, uint64_t ts)
 
 static void hyperion_output_raw_video(void *param, struct video_data *frame)
 {
-	hyperion_output *out_data = (hyperion_output*)param;
+	hyperion_output *out_data = static_cast<hyperion_output*>(param);
+
 	if(out_data->active)
 	{
 		pthread_mutex_lock(&out_data->mutex);
-
-		QImage RGBAImage((const uint8_t *) frame->data[0], out_data->width, out_data->height, 4 * out_data->width, QImage::Format_RGB32);
+		QImage RGBAImage(static_cast<const uchar*>(frame->data[0]), static_cast<int>(out_data->width), static_cast<int>(out_data->height), 4 * out_data->width, QImage::Format_RGBA8888);
 		QImage RGBImage = RGBAImage.convertToFormat(QImage::Format_RGB888);
 		Image<ColorRgb> outputImage(out_data->width, out_data->height);
 		for (int y = 0; y < RGBImage.height(); y++)
+		{
 			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
+		}
 
 		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
 		pthread_mutex_unlock(&out_data->mutex);
@@ -166,8 +171,8 @@ struct obs_output_info create_hyperion_output_info()
 };
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_AUTHOR("Hyperion-Project");
-OBS_MODULE_USE_DEFAULT_LOCALE("hyperion-obs", "en-US")
+OBS_MODULE_AUTHOR(OBS_AUTHOR);
+OBS_MODULE_USE_DEFAULT_LOCALE(OBS_MODULE_NAME, OBS_DEFAULT_LOCALE)
 
 bool obs_module_load(void)
 {
@@ -181,12 +186,12 @@ bool obs_module_load(void)
 	obs_register_output(&hyperion_output_info);
 
 	obs_data_t *settings = obs_data_create();
-	_hyperionOutput = obs_output_create("hyperion_output", "HyperionOutput", settings, NULL);
+	_hyperionOutput = obs_output_create("hyperion_output", "HyperionOutput", settings, nullptr);
 	obs_data_release(settings);
 	hyperion_signal_init("void close(string msg, bool running)");
 
-	QMainWindow* main_window = (QMainWindow*)obs_frontend_get_main_window();
-	QAction *action = (QAction*)obs_frontend_add_tools_menu_qaction(obs_module_text("Name"));
+	QMainWindow* main_window = static_cast<QMainWindow*>(obs_frontend_get_main_window());
+	QAction *action = static_cast<QAction*>(obs_frontend_add_tools_menu_qaction(obs_module_text("Name")));
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
 	hyperionProperties = new HyperionProperties(main_window);
@@ -197,7 +202,7 @@ bool obs_module_load(void)
 		hyperionProperties->setVisible(!hyperionProperties->isVisible());
 	};
 
-	action->connect(action, &QAction::triggered, menu_cb);
+	QAction::connect(action, &QAction::triggered, menu_cb);
 
     return true;
 }

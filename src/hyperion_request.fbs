@@ -19,7 +19,16 @@ table Image {
   duration:int = -1;
 }
 
-union Command {Image, Register}
+table Clear {
+  priority:int;
+}
+
+table Color {
+  data:int = -1;
+  duration:int = -1;
+}
+
+union Command {Color, Image, Clear, Register}
 
 table Request {
   command:Command (required);
