@@ -36,15 +36,12 @@ public:
 	/// @param port The port of the Hyperion Flatpuffer server (default is 19400)
 	/// @param skipReply  If true skip reply
 	///
-	FlatBufferConnection(const QString& origin, const QString& host, int priority, bool skipReply, quint16 port = FLATBUFFER_DEFAULT_PORT);
+	FlatBufferConnection(const QString& origin, const QString& host, int priority, quint16 port = FLATBUFFER_DEFAULT_PORT);
 
 	///
 	/// @brief Destructor
 	///
 	~FlatBufferConnection() override;
-
-	/// @brief Do not read reply messages from Hyperion if set to true
-	void setSkipReply(bool skip);
 
 	///
 	/// @brief Register a new priority with given origin

@@ -13,10 +13,10 @@
 
 // Constants
 namespace {
-const char OBS_AUTHOR[] = "Hyperion-Project";
-const char OBS_MODULE_NAME[] = "hyperion-obs";
-const char OBS_DEFAULT_LOCALE[] = "en-US";
-const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
+	const char OBS_AUTHOR[] = "Hyperion-Project";
+	const char OBS_MODULE_NAME[] = "hyperion-obs";
+	const char OBS_DEFAULT_LOCALE[] = "en-US";
+	const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
 } //End of constants
 
 struct hyperion_output
@@ -53,8 +53,11 @@ int Connect(void *data)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
+	if (!out_data->active)
+	{
+		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, "Location"), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, "Port"));
+	}
 
-	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, "Location"), FLATBUFFER_DEFAULT_PRIORITY, false, obs_data_get_int(settings, "Port"));
 	return 0;
 }
 

@@ -13,7 +13,7 @@
 
 #define QSTRING_CSTR(str) str.toLocal8Bit().constData()
 
-FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString& host, int priority, bool skipReply, quint16 port)
+FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString& host, int priority, quint16 port)
 	: _socket()
 	, _origin(origin)
 	, _priority(priority)
@@ -22,8 +22,7 @@ FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString&
 	, _prevSocketState(QAbstractSocket::UnconnectedState)
 	, _registered(false)
 {
-	if(!skipReply)
-		connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
+	connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
 
 	// init connect
 	connectToHost();
@@ -75,14 +74,6 @@ void FlatBufferConnection::readData()
 	}
 }
 
-void FlatBufferConnection::setSkipReply(bool skip)
-{
-	if(skip)
-		disconnect(&_socket, &QTcpSocket::readyRead, 0, 0);
-	else
-		connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
-}
-
 void FlatBufferConnection::setRegister(const QString& origin, int priority)
 {
 	auto registerReq = hyperionnet::CreateRegister(_builder, _builder.CreateString(QSTRING_CSTR(origin)), priority);
@@ -106,8 +97,6 @@ void FlatBufferConnection::setRegister(const QString& origin, int priority)
 
 void FlatBufferConnection::setImage(const Image<ColorRgb> &image)
 {
-	qDebug() << "setImage";
-
 	auto imgData = _builder.CreateVector(reinterpret_cast<const uint8_t*>(image.memptr()), image.size());
 	auto rawImg = hyperionnet::CreateRawImage(_builder, imgData, image.width(), image.height());
 	auto imageReq = hyperionnet::CreateImage(_builder, hyperionnet::ImageType_RawImage, rawImg.Union(), -1);
