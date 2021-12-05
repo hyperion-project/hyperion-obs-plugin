@@ -17,7 +17,7 @@ HyperionProperties::HyperionProperties(QWidget *parent)
 	config_t* config = obs_frontend_get_global_config();
 	config_set_default_bool(config, CONFIG_SECTION, "AutoStart", false);
 	config_set_default_string(config, CONFIG_SECTION, "Location", "127.0.0.1");
-	config_set_default_int(config, CONFIG_SECTION, "Port", 19444);
+	config_set_default_int(config, CONFIG_SECTION, "Port", 19400);
 
 	const bool autostart = config_get_bool(config, CONFIG_SECTION, "AutoStart");
 	const char* location = config_get_string(config, CONFIG_SECTION, "Location");

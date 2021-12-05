@@ -1,5 +1,6 @@
 #include <obs-frontend-api.h>
 #include <obs-module.h>
+#include <util/threading.h>
 
 #include <QMainWindow>
 #include <QAction>
@@ -17,6 +18,7 @@ struct hyperion_output
 	bool active = false;
 	int width = 0;
 	int height = 0;
+	pthread_mutex_t mutex;
 };
 
 HyperionProperties *hyperionProperties;
@@ -65,8 +67,15 @@ static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
 {
 	hyperion_output *data = (hyperion_output*)bzalloc(sizeof(struct hyperion_output));
 	data->output = output;
-	UNUSED_PARAMETER(settings);
-	return data;
+
+	pthread_mutex_init_value(&data->mutex);
+	if (pthread_mutex_init(&data->mutex, NULL) == 0)
+	{
+		UNUSED_PARAMETER(settings);
+		return data;
+	}
+
+	return nullptr;
 }
 
 static void hyperion_output_destroy(void *data)
@@ -74,6 +83,7 @@ static void hyperion_output_destroy(void *data)
 	hyperion_output *out_data = (hyperion_output*)data;
 	if (out_data)
 	{
+		pthread_mutex_destroy(&out_data->mutex);
 		bfree(out_data);
 	}
 }
@@ -128,28 +138,16 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 	hyperion_output *out_data = (hyperion_output*)param;
 	if(out_data->active)
 	{
+		pthread_mutex_lock(&out_data->mutex);
+
+		QImage RGBAImage((const uint8_t *) frame->data[0], out_data->width, out_data->height, 4 * out_data->width, QImage::Format_RGB32);
+		QImage RGBImage = RGBAImage.convertToFormat(QImage::Format_RGB888);
 		Image<ColorRgb> outputImage(out_data->width, out_data->height);
-		uint8_t* destMemory = (uint8_t*)outputImage.memptr();
-		int destLineSize = outputImage.width() * 3;
-
-		for (int yDest = out_data->height - 1; yDest >= 0; --yDest)
-		{
-			uint8_t* currentDest = destMemory + destLineSize * yDest;
-			uint8_t* endDest = currentDest + destLineSize;
-			uint8_t* currentSource = frame->data[0] + frame->linesize[0];
-
-			currentSource += 2;
-
-			while (currentDest < endDest)
-			{
-				*currentDest++ = *currentSource--;
-				*currentDest++ = *currentSource--;
-				*currentDest++ = *currentSource;
-				currentSource += 6;
-			}
-		}
+		for (int y = 0; y < RGBImage.height(); y++)
+			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
 
 		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
+		pthread_mutex_unlock(&out_data->mutex);
 	}
 }
 
