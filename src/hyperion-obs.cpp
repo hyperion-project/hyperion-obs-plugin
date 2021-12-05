@@ -126,28 +126,31 @@ static void hyperion_output_stop(void *data, uint64_t ts)
 static void hyperion_output_raw_video(void *param, struct video_data *frame)
 {
 	hyperion_output *out_data = (hyperion_output*)param;
-	Image<ColorRgb> outputImage(out_data->width, out_data->height);
-	uint8_t* destMemory = (uint8_t*)outputImage.memptr();
-	int destLineSize = outputImage.width() * 3;
-
-	for (int yDest = out_data->height - 1; yDest >= 0; --yDest)
+	if(out_data->active)
 	{
-		uint8_t* currentDest = destMemory + destLineSize * yDest;
-		uint8_t* endDest = currentDest + destLineSize;
-		uint8_t* currentSource = frame->data[0] + frame->linesize[0];
+		Image<ColorRgb> outputImage(out_data->width, out_data->height);
+		uint8_t* destMemory = (uint8_t*)outputImage.memptr();
+		int destLineSize = outputImage.width() * 3;
 
-		currentSource += 2;
-
-		while (currentDest < endDest)
+		for (int yDest = out_data->height - 1; yDest >= 0; --yDest)
 		{
-			*currentDest++ = *currentSource--;
-			*currentDest++ = *currentSource--;
-			*currentDest++ = *currentSource;
-			currentSource += 6;
-		}
-	}
+			uint8_t* currentDest = destMemory + destLineSize * yDest;
+			uint8_t* endDest = currentDest + destLineSize;
+			uint8_t* currentSource = frame->data[0] + frame->linesize[0];
 
-	QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
+			currentSource += 2;
+
+			while (currentDest < endDest)
+			{
+				*currentDest++ = *currentSource--;
+				*currentDest++ = *currentSource--;
+				*currentDest++ = *currentSource;
+				currentSource += 6;
+			}
+		}
+
+		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
+	}
 }
 
 struct obs_output_info create_hyperion_output_info()

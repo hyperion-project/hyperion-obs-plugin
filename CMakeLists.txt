@@ -77,5 +77,4 @@ endif()
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 
 install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/obs-plugins)
-install(DIRECTORY data/locale/ DESTINATION "${CMAKE_INSTALL_DATAROOTDIR}/obs/obs-plugins/hyperion-obs/data/locale")
-
+install(DIRECTORY locale/ DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/obs/obs-plugins/hyperion-obs/locale)

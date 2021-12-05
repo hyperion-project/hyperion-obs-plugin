@@ -19,17 +19,19 @@ The idea for this plugin originated from a fork of [Murat Seker][m-seker].
 
 ## Build
 
+- Install QT and libobs
+
 ```
-# Install QT and libobs
 sudo apt install qtbase5-dev libobs-dev
 ```
 
-```
-# Build plugins
-TODO
-```
+- Build plugin
 
 ```
-# Install plugin
-TODO
+git clone --recursive https://github.com/hyperion-project/hyperion-obs-plugin.git
+cd hyperion-obs-plugin
+mkdir build && cd build
+cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+make -j $(nproc)
+sudo make install
 ```
