@@ -1,0 +1,8 @@
+namespace hyperionnet;
+
+table Reply {
+  error:string;
+  registered:int = -1;
+}
+
+root_type Reply;
