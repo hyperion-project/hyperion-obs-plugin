@@ -8,6 +8,16 @@ namespace Ui {
 	class HyperionProperties;
 }
 
+const char OBS_SETTINGS_AUTOSTART[] = "AutoStart";
+const char OBS_SETTINGS_ADDRESS[] = "Address";
+const char OBS_SETTINGS_PORT[] = "Port";
+const char OBS_SETTINGS_SIZEDECIMATION[] = "SizeDecimation";
+
+const bool OBS_SETTINGS_DEFAULT_AUTOSTART = false;
+const char OBS_SETTINGS_DEFAULT_ADDRESS[] = "localhost";
+const int OBS_SETTINGS_DEFAULT_PORT = 19400;
+const int OBS_SETTINGS_DEFAULT_SIZEDECIMATION = DEFAULT_SIZEDECIMATION;
+
 class HyperionProperties : public QDialog
 {
 	Q_OBJECT

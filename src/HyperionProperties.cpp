@@ -6,19 +6,38 @@
 
 #define CONFIG_SECTION "HyperionOutput"
 
-// Constants
-namespace {
-const char OBS_CONFIG_AUTOSTART[] = "AutoStart";
-const char OBS_CONFIG_ADDRESS[] = "Address";
-const char OBS_CONFIG_PORT[] = "Port";
-} //End of constants
-
-
 HyperionProperties::HyperionProperties(QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::HyperionProperties)
 {
 	ui->setupUi(this);
+
+	config_t* config = obs_frontend_get_global_config();
+	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_AUTOSTART))
+	{
+		bool autostart = config_get_bool(config, CONFIG_SECTION, OBS_SETTINGS_AUTOSTART);
+		ui->AutoStart->setChecked(autostart);
+	}
+
+	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_ADDRESS))
+	{
+		QString address = config_get_string(config, CONFIG_SECTION, OBS_SETTINGS_ADDRESS);
+		ui->Address->setText(address);
+	}
+
+	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_PORT))
+	{
+		int port = static_cast<int>(config_get_int(config, CONFIG_SECTION, OBS_SETTINGS_PORT));
+		ui->Port->setValue(port);
+	}
+
+	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION))
+	{
+		int sizeDecimation = static_cast<int>(config_get_int(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION));
+		ui->SizeDecimation->setValue(sizeDecimation);
+	}
+	
+	enableStart(true);
 
 	connect(ui->ButtonStart, &QPushButton::clicked, this, &HyperionProperties::saveSettings);
 	connect(ui->AutoStart, &QCheckBox::stateChanged, this, &HyperionProperties::saveSettings);
@@ -26,18 +45,7 @@ HyperionProperties::HyperionProperties(QWidget *parent)
 	connect(ui->ButtonStart, &QPushButton::clicked, this, &HyperionProperties::onStart);
 	connect(ui->ButtonStop, &QPushButton::clicked, this, &HyperionProperties::onStop);
 
-	config_t* config = obs_frontend_get_global_config();
-	const bool autostart = config_get_bool(config, CONFIG_SECTION, OBS_CONFIG_AUTOSTART);
-	const char* address = config_get_string(config, CONFIG_SECTION, OBS_CONFIG_ADDRESS);
-	const int port = config_get_int(config, CONFIG_SECTION, OBS_CONFIG_PORT);
-
-	ui->AutoStart->setChecked(autostart);
-	ui->Address->setText(address);
-	ui->Port->setValue(port);
-	
-	enableStart(true);
-
-	if(autostart)
+	if(ui->AutoStart->isChecked())
 	{
 		onStart();
 	}
@@ -63,16 +71,18 @@ void HyperionProperties::setWarningText(const char *msg)
 
 void HyperionProperties::saveSettings()
 {
-	bool autostart = ui->AutoStart->isChecked();
-	QString address = ui->Address->text();
-	int port = ui->Port->value();
-
 	config_t* config = obs_frontend_get_global_config();
 	if(config != nullptr)
 	{
-		config_set_bool(config, CONFIG_SECTION, OBS_CONFIG_AUTOSTART, autostart);
-		config_set_string(config, CONFIG_SECTION, OBS_CONFIG_ADDRESS, address.toLocal8Bit().constData());
-		config_set_int(config, CONFIG_SECTION, OBS_CONFIG_PORT, port);
+		bool autostart = ui->AutoStart->isChecked();
+		QString address = ui->Address->text();
+		int port = ui->Port->value();
+		int sizeDecimation = ui->SizeDecimation->value();
+
+		config_set_bool(config, CONFIG_SECTION, OBS_SETTINGS_AUTOSTART, autostart);
+		config_set_string(config, CONFIG_SECTION, OBS_SETTINGS_ADDRESS, address.toLocal8Bit().constData());
+		config_set_int(config, CONFIG_SECTION, OBS_SETTINGS_PORT, port);
+		config_set_int(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION, sizeDecimation);
 	}
 }
 
@@ -80,11 +90,13 @@ void HyperionProperties::onStart()
 {
 	QString address = ui->Address->text();
 	int port = ui->Port->value();
+	int sizeDecimation = ui->SizeDecimation->value();
+
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_connect(handler, "stop", output_stopped , this);
 	enableStart(false);
 	setWarningText("");
-	hyperion_start_streaming(address, port);
+	hyperion_start_streaming(address, port, sizeDecimation);
 }
 
 void HyperionProperties::onStop()

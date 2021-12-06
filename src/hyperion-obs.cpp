@@ -19,9 +19,6 @@ const char OBS_DEFAULT_LOCALE[] = "en-US";
 const char OBS_OUTPUT_NAME[] = "Hyperion";
 const char OBS_MENU_ID[] = "UI.Menu";
 
-const char OBS_DATA_ADDRESS[] = "Address";
-const char OBS_DATA_PORT[] = "Port";
-
 const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
 } //End of constants
 
@@ -31,6 +28,7 @@ struct hyperion_output
 	FlatBufferConnection* client = nullptr;
 	uint32_t width = 0;
 	uint32_t height = 0;
+	int sizeDecimation = DEFAULT_SIZEDECIMATION;
 	bool active = false;
 	pthread_mutex_t mutex;
 };
@@ -61,7 +59,7 @@ int Connect(void *data)
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	if (!out_data->active)
 	{
-		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_DATA_ADDRESS), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, OBS_DATA_PORT));
+		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, OBS_SETTINGS_PORT));
 	}
 
 	return 0;
@@ -110,6 +108,10 @@ static bool hyperion_output_start(void *data)
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	out_data->width = obs_output_get_width(out_data->output);
 	out_data->height = obs_output_get_height(out_data->output);
+
+	obs_data_t *settings = obs_output_get_settings(out_data->output);
+	out_data->sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
+
 	int ret = Connect(data);
 
 	struct video_scale_info conv;
@@ -153,9 +155,17 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 	if(out_data->active)
 	{
 		pthread_mutex_lock(&out_data->mutex);
+
+		if ( out_data->sizeDecimation == 0)
+		{
+			out_data->sizeDecimation = DEFAULT_SIZEDECIMATION;
+		}
+		int outputWidth = out_data->width / out_data->sizeDecimation;
+
 		QImage RGBAImage(static_cast<const uchar*>(frame->data[0]), static_cast<int>(out_data->width), static_cast<int>(out_data->height), 4 * out_data->width, QImage::Format_RGBA8888);
-		QImage RGBImage = RGBAImage.convertToFormat(QImage::Format_RGB888);
-		Image<ColorRgb> outputImage(out_data->width, out_data->height);
+		QImage RGBImage = RGBAImage.scaledToWidth(outputWidth).convertToFormat(QImage::Format_RGB888);
+
+		Image<ColorRgb> outputImage(RGBImage.width(), RGBImage.height());
 		for (int y = 0; y < RGBImage.height(); y++)
 		{
 			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
@@ -224,11 +234,12 @@ void obs_module_unload(void)
 #endif
 }
 
-void hyperion_start_streaming(QString& address, int port)
+void hyperion_start_streaming(QString& address, int port, int sizeDecimation)
 {
 	obs_data_t *settings = obs_output_get_settings(_hyperionOutput);
-	obs_data_set_string(settings, OBS_DATA_ADDRESS, address.toLocal8Bit().constData());
-	obs_data_set_int(settings, OBS_DATA_PORT, port);
+	obs_data_set_string(settings, OBS_SETTINGS_ADDRESS, address.toLocal8Bit().constData());
+	obs_data_set_int(settings, OBS_SETTINGS_PORT, port);
+	obs_data_set_int(settings, OBS_SETTINGS_SIZEDECIMATION, sizeDecimation);
 	obs_output_update(_hyperionOutput, settings);
 	obs_data_release(settings);
 	obs_output_start(_hyperionOutput);
