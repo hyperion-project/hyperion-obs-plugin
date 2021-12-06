@@ -64,6 +64,13 @@ public slots:
 	///
 	void setImage(const Image<ColorRgb> &image);
 
+signals:
+
+	///
+	/// @brief Emits whenever the server disconnected
+	///
+	void serverDisconnected();
+
 private slots:
 	///
 	/// @brief Try to connect to the Hyperion host
@@ -74,6 +81,11 @@ private slots:
 	/// @brief Slot called when new data has arrived
 	///
 	void readData();
+
+	///
+	/// @brief Is called when the socket closed the connection
+	///
+	void disconnected();
 
 private:
 

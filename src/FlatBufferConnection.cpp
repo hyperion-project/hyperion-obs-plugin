@@ -23,6 +23,7 @@ FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString&
 	, _registered(false)
 {
 	connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
+	connect(&_socket, &QTcpSocket::disconnected, this, &FlatBufferConnection::disconnected);
 
 	// init connect
 	connectToHost();
@@ -65,12 +66,16 @@ void FlatBufferConnection::readData()
 
 		if (hyperionnet::VerifyReplyBuffer(verifier))
 		{
-			parseReply(hyperionnet::GetReply(msgData));
+			const hyperionnet::Reply* reply = hyperionnet::GetReply(msgData);
+			if (!parseReply(reply))
+			{
+				qDebug() << "Reply received with error: " << reply->error();
+				_socket.close();
+			}
 			continue;
 		}
 
 		qDebug() << "Unable to parse reply";
-		// Error(_log, "Unable to parse reply");
 	}
 }
 
@@ -160,28 +165,29 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 
 bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
 {
-	if (!reply->error())
+	if (reply->error() == NULL)
 	{
-		// no error set must be a success or registered
-		const auto registered = reply->registered();
-
-		 // We got a registered reply.
-		if (registered == -1 || registered != _priority)
+		if (_registered)
 		{
-			_registered = false;
+			return true;
 		}
-		else
+
+		const auto registered = reply->registered();
+		if (registered == _priority)
 		{
 			_registered = true;
 		}
-
+		else
+		{
+			_registered = false;
+		}
 		return true;
 	}
-	else
-	{
-		_registered = false;
-		throw std::runtime_error(reply->error()->str());
-	}
-
 	return false;
+}
+
+void FlatBufferConnection::disconnected()
+{
+	qDebug() << "Connection to Hyperion server was closed";
+	emit serverDisconnected();
 }
