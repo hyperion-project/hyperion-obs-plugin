@@ -17,18 +17,12 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>10</y>
+     <y>20</y>
      <width>381</width>
-     <height>171</height>
+     <height>141</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="Hyperion">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
     <item>
      <layout class="QHBoxLayout" name="HyperionOutputConfig">
       <item>
@@ -112,25 +106,40 @@
      </layout>
     </item>
     <item>
-     <spacer name="horizontalSpacer">
+     <spacer name="verticalSpacer">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Maximum</enum>
       </property>
       <property name="sizeHint" stdset="0">
        <size>
-        <width>40</width>
-        <height>10</height>
+        <width>20</width>
+        <height>15</height>
        </size>
       </property>
      </spacer>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="WarningText">
-      <property name="readOnly">
-       <bool>true</bool>
+     <widget class="QLabel" name="WarningText">
+      <property name="autoFillBackground">
+       <bool>false</bool>
       </property>
-      <property name="plainText">
-       <string/>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(245, 121, 0);</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="text">
+       <string notr="true"/>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::AutoText</enum>
       </property>
      </widget>
     </item>
@@ -140,21 +149,12 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>190</y>
+     <y>170</y>
      <width>379</width>
      <height>41</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="HyperionStreamControl">
-    <property name="spacing">
-     <number>0</number>
-    </property>
-    <property name="sizeConstraint">
-     <enum>QLayout::SetDefaultConstraint</enum>
-    </property>
-    <property name="topMargin">
-     <number>0</number>
-    </property>
     <item>
      <widget class="QCheckBox" name="AutoStart">
       <property name="enabled">

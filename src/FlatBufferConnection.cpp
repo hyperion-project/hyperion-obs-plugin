@@ -128,13 +128,13 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 		switch (_socket.state() )
 		{
 			case QAbstractSocket::UnconnectedState:
-				qDebug() << "No connection to Hyperion: " << QSTRING_CSTR(_host) << _port;
+				emit logMessage(QString("No connection to Hyperion: %1 %2").arg(_host).arg(_port));
 				break;
 			case QAbstractSocket::ConnectedState:
-				qDebug() << "Connected to Hyperion: " << QSTRING_CSTR(_host) << _port;
+				emit logMessage(QString("Connected to Hyperion: %1 %2").arg(_host).arg(_port));
 				break;
 			default:
-				qDebug() << "Connecting to Hyperion: " << QSTRING_CSTR(_host) << _port;
+				emit logMessage(QString("Connecting to Hyperion: %1 %2").arg(_host).arg(_port));
 				break;
 	  }
 	  _prevSocketState = _socket.state();
@@ -188,6 +188,21 @@ bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
 
 void FlatBufferConnection::disconnected()
 {
-	qDebug() << "Connection to Hyperion server was closed";
-	emit serverDisconnected();
+	struct calldata call_data;
+	calldata_init(&call_data);
+	calldata_set_string(&call_data, "msg", "Connection to Hyperion server was closed");
+	calldata_set_bool(&call_data, "running", true);
+	signal_handler_t *handler = hyperion_get_signal_handler();
+	signal_handler_signal(handler, "stop", &call_data);
+	calldata_free(&call_data);
+}
+
+void FlatBufferConnection::logMessage(const QString& message)
+{
+	struct calldata call_data;
+	calldata_init(&call_data);
+	calldata_set_string(&call_data, "msg", message.toStdString().c_str());
+	signal_handler_t *handler = hyperion_get_signal_handler();
+	signal_handler_signal(handler, "log", &call_data);
+	calldata_free(&call_data);
 }

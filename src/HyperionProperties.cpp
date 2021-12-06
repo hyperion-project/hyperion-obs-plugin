@@ -66,7 +66,7 @@ void HyperionProperties::enableStart(bool enable)
 
 void HyperionProperties::setWarningText(const char *msg)
 {
-	ui->WarningText->setText(msg);
+	ui->WarningText->appendPlainText(msg);
 }
 
 void HyperionProperties::saveSettings()
@@ -94,6 +94,8 @@ void HyperionProperties::onStart()
 
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_connect(handler, "stop", output_stopped , this);
+	signal_handler_connect(handler, "log", logger_message, this);
+	
 	enableStart(false);
 	setWarningText("");
 	hyperion_start_streaming(address, port, sizeDecimation);
@@ -119,4 +121,13 @@ static void output_stopped(void *data, calldata_t *cd)
 	signal_handler_t *handler = obs_output_get_signal_handler(output);
 	page->enableStart(true);
 	signal_handler_disconnect(handler, "stop", output_stopped , page);
+	signal_handler_disconnect(handler, "log", logger_message, page);
+}
+
+static void logger_message(void *data, calldata_t *cd)
+{
+	auto *page = static_cast<HyperionProperties*>(data);
+	auto *output = static_cast<obs_output_t*>(calldata_ptr(cd, "output"));
+	const char* msg = calldata_string(cd, "msg");
+	page->setWarningText(msg);
 }

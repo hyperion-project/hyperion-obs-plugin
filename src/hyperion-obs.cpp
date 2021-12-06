@@ -39,7 +39,7 @@ obs_output_t* _hyperionOutput;
 void hyperion_signal_init(const char *signal)
 {
 	signal_handler_t *handler = hyperion_get_signal_handler();
-	signal_handler_add(handler,signal);
+	signal_handler_add(handler, signal);
 }
 
 void hyperion_signal_stop(const char *msg, bool running)
@@ -50,6 +50,16 @@ void hyperion_signal_stop(const char *msg, bool running)
 	calldata_set_bool(&call_data, "running", running);
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_signal(handler, "stop", &call_data);
+	calldata_free(&call_data);
+}
+
+void hyperion_signal_log(const char *msg)
+{
+	struct calldata call_data;
+	calldata_init(&call_data);
+	calldata_set_string(&call_data, "msg", msg);
+	signal_handler_t *handler = hyperion_get_signal_handler();
+	signal_handler_signal(handler, "log", &call_data);
 	calldata_free(&call_data);
 }
 
@@ -131,6 +141,9 @@ static bool hyperion_output_start(void *data)
 	}
 
 	out_data->active = true;
+
+	hyperion_signal_log("Let's GO");
+
 	return obs_output_begin_data_capture(out_data->output, 0);
 }
 
@@ -171,6 +184,7 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
 		}
 
+
 		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
 		pthread_mutex_unlock(&out_data->mutex);
 	}
@@ -200,6 +214,7 @@ bool obs_module_load(void)
 	WSADATA wsad;
 	WSAStartup(MAKEWORD(2, 2), &wsad);
 #endif
+
 	qRegisterMetaType<Image<ColorRgb>>("Image<ColorRgb>");
 
 	obs_output_info hyperion_output_info = create_hyperion_output_info();
@@ -208,7 +223,8 @@ bool obs_module_load(void)
 	obs_data_t *settings = obs_data_create();
 	_hyperionOutput = obs_output_create("hyperion_output", OBS_OUTPUT_NAME, settings, nullptr);
 	obs_data_release(settings);
-	hyperion_signal_init("void close(string msg, bool running)");
+	hyperion_signal_init("void stop(string msg, bool running)");
+	hyperion_signal_init("void log(string msg)");
 
 	QMainWindow* main_window = static_cast<QMainWindow*>(obs_frontend_get_main_window());
 	QAction *action = static_cast<QAction*>(obs_frontend_add_tools_menu_qaction(obs_module_text(OBS_MENU_ID)));

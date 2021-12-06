@@ -15,6 +15,8 @@
 
 #include <flatbuffers/flatbuffers.h>
 
+#include "hyperion-obs.h"
+
 const int FLATBUFFER_DEFAULT_PORT = 19400;
 
 namespace hyperionnet
@@ -64,12 +66,12 @@ public slots:
 	///
 	void setImage(const Image<ColorRgb> &image);
 
-signals:
+// signals:
 
-	///
-	/// @brief Emits whenever the server disconnected
-	///
-	void serverDisconnected();
+// 	///
+// 	/// @brief Emits whenever the server disconnected
+// 	///
+// 	void serverDisconnected();
 
 private slots:
 	///
@@ -86,6 +88,8 @@ private slots:
 	/// @brief Is called when the socket closed the connection
 	///
 	void disconnected();
+
+	void logMessage(const QString& message);
 
 private:
 
