@@ -124,41 +124,38 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 		{
 			case QAbstractSocket::UnconnectedState:
 				qDebug() << "No connection to Hyperion: " << QSTRING_CSTR(_host) << _port;
-				//Info(_log, "No connection to Hyperion: %s:%u", QSTRING_CSTR(_host), _port);
 				break;
 			case QAbstractSocket::ConnectedState:
 				qDebug() << "Connected to Hyperion: " << QSTRING_CSTR(_host) << _port;
-				//Info(_log, "Connected to Hyperion: %s:%u", QSTRING_CSTR(_host), _port);
 				break;
 			default:
 				qDebug() << "Connecting to Hyperion: " << QSTRING_CSTR(_host) << _port;
-				//Debug(_log, "Connecting to Hyperion: %s:%u", QSTRING_CSTR(_host), _port);
 				break;
 	  }
 	  _prevSocketState = _socket.state();
 	}
 
-
-	if (_socket.state() != QAbstractSocket::ConnectedState)
-		return;
-
-	if(!_registered)
+	if (_socket.state() == QAbstractSocket::ConnectedState)
 	{
-		setRegister(_origin, _priority);
-		return;
+		if(!_registered)
+		{
+			setRegister(_origin, _priority);
+		}
+		else
+		{
+			const uint8_t header[] = {
+				uint8_t((size >> 24) & 0xFF),
+				uint8_t((size >> 16) & 0xFF),
+				uint8_t((size >>  8) & 0xFF),
+				uint8_t((size	  ) & 0xFF)};
+
+			// write message
+			int count = 0;
+			count += _socket.write(reinterpret_cast<const char *>(header), 4);
+			count += _socket.write(reinterpret_cast<const char *>(buffer), size);
+			_socket.flush();
+		}
 	}
-
-	const uint8_t header[] = {
-		uint8_t((size >> 24) & 0xFF),
-		uint8_t((size >> 16) & 0xFF),
-		uint8_t((size >>  8) & 0xFF),
-		uint8_t((size	  ) & 0xFF)};
-
-	// write message
-	int count = 0;
-	count += _socket.write(reinterpret_cast<const char *>(header), 4);
-	count += _socket.write(reinterpret_cast<const char *>(buffer), size);
-	_socket.flush();
 }
 
 bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
@@ -170,14 +167,21 @@ bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
 
 		 // We got a registered reply.
 		if (registered == -1 || registered != _priority)
+		{
 			_registered = false;
+		}
 		else
+		{
 			_registered = true;
+		}
 
 		return true;
 	}
 	else
+	{
+		_registered = false;
 		throw std::runtime_error(reply->error()->str());
+	}
 
 	return false;
 }

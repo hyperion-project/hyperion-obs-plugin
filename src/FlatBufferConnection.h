@@ -1,4 +1,5 @@
-#pragma once
+#ifndef FLATFBUFFERCONNECTION_H
+#define FLATFBUFFERCONNECTION_H
 
 // Qt includes
 #include <QString>
@@ -104,3 +105,5 @@ private:
 	flatbuffers::FlatBufferBuilder _builder;
 	bool _registered;
 };
+
+#endif // FLATFBUFFERCONNECTION_H

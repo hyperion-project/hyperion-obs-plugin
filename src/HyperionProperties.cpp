@@ -6,34 +6,41 @@
 
 #define CONFIG_SECTION "HyperionOutput"
 
+// Constants
+namespace {
+const char OBS_CONFIG_AUTOSTART[] = "AutoStart";
+const char OBS_CONFIG_ADDRESS[] = "Address";
+const char OBS_CONFIG_PORT[] = "Port";
+} //End of constants
+
+
 HyperionProperties::HyperionProperties(QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::HyperionProperties)
 {
 	ui->setupUi(this);
-	connect(ui->ButtonStart, SIGNAL(clicked()), this, SLOT(onStart()));
-	connect(ui->ButtonStop, SIGNAL(clicked()), this, SLOT(onStop()));
+
+	connect(ui->ButtonStart, &QPushButton::clicked, this, &HyperionProperties::saveSettings);
+	connect(ui->AutoStart, &QCheckBox::stateChanged, this, &HyperionProperties::saveSettings);
+
+	connect(ui->ButtonStart, &QPushButton::clicked, this, &HyperionProperties::onStart);
+	connect(ui->ButtonStop, &QPushButton::clicked, this, &HyperionProperties::onStop);
 
 	config_t* config = obs_frontend_get_global_config();
-	config_set_default_bool(config, CONFIG_SECTION, "AutoStart", false);
-	config_set_default_string(config, CONFIG_SECTION, "Location", "127.0.0.1");
-	config_set_default_int(config, CONFIG_SECTION, "Port", 19400);
+	const bool autostart = config_get_bool(config, CONFIG_SECTION, OBS_CONFIG_AUTOSTART);
+	const char* address = config_get_string(config, CONFIG_SECTION, OBS_CONFIG_ADDRESS);
+	const int port = config_get_int(config, CONFIG_SECTION, OBS_CONFIG_PORT);
 
-	const bool autostart = config_get_bool(config, CONFIG_SECTION, "AutoStart");
-	const char* location = config_get_string(config, CONFIG_SECTION, "Location");
-	const int port = config_get_int(config, CONFIG_SECTION, "Port");
-
-	setWindowTitle(tr("Name"));
-	ui->LabelLocation->setText(tr("LabelLocation"));
 	ui->AutoStart->setChecked(autostart);
-	ui->Location->setText(location);
+	ui->Address->setText(address);
 	ui->Port->setValue(port);
 	
-	ui->LabelWarning->setStyleSheet("QLabel { color : red; }");
 	enableStart(true);
 
 	if(autostart)
+	{
 		onStart();
+	}
 }
 
 HyperionProperties::~HyperionProperties()
@@ -51,50 +58,51 @@ void HyperionProperties::enableStart(bool enable)
 
 void HyperionProperties::setWarningText(const char *msg)
 {
-	ui->LabelWarning->setText(msg);
+	ui->WarningText->setText(msg);
 }
 
 void HyperionProperties::saveSettings()
 {
 	bool autostart = ui->AutoStart->isChecked();
-	QByteArray location = ui->Location->text().toUtf8();
+	QString address = ui->Address->text();
 	int port = ui->Port->value();
 
 	config_t* config = obs_frontend_get_global_config();
-	if(config)
+	if(config != nullptr)
 	{
-		config_set_bool(config, CONFIG_SECTION, "AutoStart", autostart);
-		config_set_string(config, CONFIG_SECTION, "Location", location.constData());
-		config_set_int(config, CONFIG_SECTION, "Port", port);
+		config_set_bool(config, CONFIG_SECTION, OBS_CONFIG_AUTOSTART, autostart);
+		config_set_string(config, CONFIG_SECTION, OBS_CONFIG_ADDRESS, address.toLocal8Bit().constData());
+		config_set_int(config, CONFIG_SECTION, OBS_CONFIG_PORT, port);
 	}
 }
 
 void HyperionProperties::onStart()
 {
-	QByteArray location = ui->Location->text().toUtf8();
+	QString address = ui->Address->text();
 	int port = ui->Port->value();
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_connect(handler, "stop", output_stopped , this);
 	enableStart(false);
 	setWarningText("");
-	saveSettings();
-	hyperion_enable(location.constData(), port);
+	hyperion_start_streaming(address, port);
 }
 
 void HyperionProperties::onStop()
 {
-	hyperion_disable();
+	hyperion_stop_streaming();
 }
 
 static void output_stopped(void *data, calldata_t *cd)
 {
-	auto page = (HyperionProperties*) data;
-	auto output = (obs_output_t*) calldata_ptr(cd, "output");
+	auto *page = static_cast<HyperionProperties*>(data);
+	auto *output = static_cast<obs_output_t*>(calldata_ptr(cd, "output"));
 	bool running = calldata_bool(cd, "running");
 	const char* msg = calldata_string(cd, "msg");
 
 	if (running)
+	{
 		page->setWarningText(msg);
+	}
 		
 	signal_handler_t *handler = obs_output_get_signal_handler(output);
 	page->enableStart(true);

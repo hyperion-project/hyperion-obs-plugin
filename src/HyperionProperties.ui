@@ -7,105 +7,148 @@
     <x>0</x>
     <y>0</y>
     <width>455</width>
-    <height>227</height>
+    <height>260</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Hyperion Output</string>
+   <string>UI.Title</string>
   </property>
-  <widget class="QPushButton" name="ButtonStart">
-   <property name="geometry">
-    <rect>
-     <x>230</x>
-     <y>180</y>
-     <width>89</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Start</string>
-   </property>
-  </widget>
-  <widget class="QPushButton" name="ButtonStop">
-   <property name="geometry">
-    <rect>
-     <x>330</x>
-     <y>180</y>
-     <width>89</width>
-     <height>25</height>
-    </rect>
-   </property>
-   <property name="text">
-    <string>Stop</string>
-   </property>
-  </widget>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
     <rect>
-     <x>42</x>
-     <y>43</y>
+     <x>40</x>
+     <y>40</y>
      <width>381</width>
-     <height>114</height>
+     <height>141</height>
     </rect>
    </property>
-   <layout class="QVBoxLayout" name="verticalLayout_3">
+   <layout class="QVBoxLayout" name="HyperionConfig">
     <item>
-     <widget class="QCheckBox" name="AutoStart">
-      <property name="text">
-       <string>AutoStart</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
+     <layout class="QHBoxLayout" name="HyperionServer">
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_2">
-        <item>
-         <widget class="QLabel" name="LabelLocation">
-          <property name="text">
-           <string>Location</string>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QLabel" name="AddressLabel">
+        <property name="toolTip">
+         <string/>
+        </property>
+        <property name="text">
+         <string>UI.Address</string>
+        </property>
+       </widget>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout">
-        <item>
-         <widget class="QLineEdit" name="Location">
-          <property name="text">
-           <string>127.0.0.1</string>
-          </property>
-          <property name="placeholderText">
-           <string/>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QLineEdit" name="Address">
+        <property name="toolTip">
+         <string>UI.AddressTip</string>
+        </property>
+        <property name="text">
+         <string notr="true">localhost</string>
+        </property>
+        <property name="placeholderText">
+         <string/>
+        </property>
+       </widget>
       </item>
       <item>
-       <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0">
-        <item>
-         <widget class="QSpinBox" name="Port">
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>65535</number>
-          </property>
-          <property name="value">
-           <number>19400</number>
-          </property>
-         </widget>
-        </item>
-       </layout>
+       <widget class="QSpinBox" name="Port">
+        <property name="toolTip">
+         <string>UI.PortTip</string>
+        </property>
+        <property name="minimum">
+         <number>1</number>
+        </property>
+        <property name="maximum">
+         <number>65535</number>
+        </property>
+        <property name="value">
+         <number>19400</number>
+        </property>
+       </widget>
       </item>
      </layout>
     </item>
     <item>
-     <widget class="QLabel" name="LabelWarning">
+     <spacer name="verticalSpacer">
+      <property name="orientation">
+       <enum>Qt::Vertical</enum>
+      </property>
+      <property name="sizeType">
+       <enum>QSizePolicy::Maximum</enum>
+      </property>
+      <property name="sizeHint" stdset="0">
+       <size>
+        <width>20</width>
+        <height>15</height>
+       </size>
+      </property>
+     </spacer>
+    </item>
+    <item>
+     <widget class="QLabel" name="WarningText">
+      <property name="autoFillBackground">
+       <bool>false</bool>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">color: rgb(245, 121, 0);</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
       <property name="text">
-       <string/>
+       <string notr="true"/>
+      </property>
+      <property name="textFormat">
+       <enum>Qt::AutoText</enum>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QWidget" name="horizontalLayoutWidget">
+   <property name="geometry">
+    <rect>
+     <x>40</x>
+     <y>190</y>
+     <width>379</width>
+     <height>44</height>
+    </rect>
+   </property>
+   <layout class="QHBoxLayout" name="HyperionStreamControl">
+    <item>
+     <widget class="QCheckBox" name="AutoStart">
+      <property name="enabled">
+       <bool>true</bool>
+      </property>
+      <property name="toolTip">
+       <string>UI.AutoStartTip</string>
+      </property>
+      <property name="text">
+       <string>UI.AutoStart</string>
+      </property>
+      <property name="tristate">
+       <bool>false</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="ButtonStart">
+      <property name="toolTip">
+       <string>UI.StartTip</string>
+      </property>
+      <property name="text">
+       <string>Start</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="ButtonStop">
+      <property name="toolTip">
+       <string>UI.StopTip</string>
+      </property>
+      <property name="text">
+       <string>Stop</string>
       </property>
      </widget>
     </item>

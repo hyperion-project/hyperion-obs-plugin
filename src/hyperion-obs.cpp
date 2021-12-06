@@ -13,10 +13,16 @@
 
 // Constants
 namespace {
-	const char OBS_AUTHOR[] = "Hyperion-Project";
-	const char OBS_MODULE_NAME[] = "hyperion-obs";
-	const char OBS_DEFAULT_LOCALE[] = "en-US";
-	const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
+const char OBS_AUTHOR[] = "Hyperion-Project";
+const char OBS_MODULE_NAME[] = "hyperion-obs";
+const char OBS_DEFAULT_LOCALE[] = "en-US";
+const char OBS_OUTPUT_NAME[] = "Hyperion";
+const char OBS_MENU_ID[] = "UI.Menu";
+
+const char OBS_DATA_ADDRESS[] = "Address";
+const char OBS_DATA_PORT[] = "Port";
+
+const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
 } //End of constants
 
 struct hyperion_output
@@ -55,7 +61,7 @@ int Connect(void *data)
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	if (!out_data->active)
 	{
-		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, "Location"), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, "Port"));
+		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_DATA_ADDRESS), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, OBS_DATA_PORT));
 	}
 
 	return 0;
@@ -113,7 +119,8 @@ static bool hyperion_output_start(void *data)
 
 	obs_output_set_video_conversion(out_data->output, &conv);
 
-	// enum video_format format = video_output_get_format(video);
+	//video_t *video = obs_output_video(out_data->output);
+	//enum video_format format = video_output_get_format(video);
 	// double video_frame_rate = video_output_get_frame_rate(video);
 
 	if (!obs_output_can_begin_data_capture(out_data->output, 0))
@@ -189,12 +196,12 @@ bool obs_module_load(void)
 	obs_register_output(&hyperion_output_info);
 
 	obs_data_t *settings = obs_data_create();
-	_hyperionOutput = obs_output_create("hyperion_output", "HyperionOutput", settings, nullptr);
+	_hyperionOutput = obs_output_create("hyperion_output", OBS_OUTPUT_NAME, settings, nullptr);
 	obs_data_release(settings);
 	hyperion_signal_init("void close(string msg, bool running)");
 
 	QMainWindow* main_window = static_cast<QMainWindow*>(obs_frontend_get_main_window());
-	QAction *action = static_cast<QAction*>(obs_frontend_add_tools_menu_qaction(obs_module_text("Name")));
+	QAction *action = static_cast<QAction*>(obs_frontend_add_tools_menu_qaction(obs_module_text(OBS_MENU_ID)));
 
 	obs_frontend_push_ui_translation(obs_module_get_string);
 	hyperionProperties = new HyperionProperties(main_window);
@@ -217,17 +224,17 @@ void obs_module_unload(void)
 #endif
 }
 
-void hyperion_enable(const char *location, const int port)
+void hyperion_start_streaming(QString& address, int port)
 {
 	obs_data_t *settings = obs_output_get_settings(_hyperionOutput);
-	obs_data_set_string(settings, "Location", location);
-	obs_data_set_int(settings, "Port", port);
+	obs_data_set_string(settings, OBS_DATA_ADDRESS, address.toLocal8Bit().constData());
+	obs_data_set_int(settings, OBS_DATA_PORT, port);
 	obs_output_update(_hyperionOutput, settings);
 	obs_data_release(settings);
 	obs_output_start(_hyperionOutput);
 }
 
-void hyperion_disable()
+void hyperion_stop_streaming()
 {
 	obs_output_stop(_hyperionOutput);
 }
