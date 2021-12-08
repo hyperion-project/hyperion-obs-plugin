@@ -127,7 +127,6 @@ static bool hyperion_output_start(void *data)
 	Connect(data);
 
 	video_t *video = obs_output_video(out_data->output);
-	enum video_format format = video_output_get_format(video);
 
 	if (video_output_get_format(video) != VIDEO_FORMAT_RGBA)
 	{

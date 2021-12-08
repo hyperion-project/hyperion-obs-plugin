@@ -141,7 +141,6 @@ static void output_stopped(void *data, calldata_t *cd)
 static void logger_message(void *data, calldata_t *cd)
 {
 	auto *page = static_cast<HyperionProperties*>(data);
-	auto *output = static_cast<obs_output_t*>(calldata_ptr(cd, "output"));
 	const char* msg = calldata_string(cd, "msg");
 	page->appendLogText(msg);
 }

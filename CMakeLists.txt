@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.5)
+cmake_policy(SET CMP0071 NEW)
 project(hyperion-obs)
 
 # Macro to get path of first sub dir of a dir, used for MAC OSX lib/header searching
@@ -14,19 +15,15 @@ MACRO(FIRSTSUBDIR result curdir)
   SET(${result} ${dirlist})
 ENDMACRO()
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
-if(UNIX)
-	include(GNUInstallDirs)
-endif()
-
-# Add project specific cmake modules (find, etc)
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/cmake)
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # enable C++11; MSVC doesn't have c++11 feature switch
-if(NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+if (NOT CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	include(CheckCXXCompilerFlag)
 	CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 	CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
@@ -83,8 +80,21 @@ if (WIN32)
 	set(PTHREAD_LIB "${OBS_BUILD}/deps/w32-pthreads/$<CONFIGURATION>/w32-pthreads.lib")
 endif()
 
-find_package(Libobs REQUIRED)
+include(cmake/FindLibObs.cmake)
+find_package(LibObs REQUIRED)
 find_package(Qt5 COMPONENTS Core Widgets Network REQUIRED)
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
+if (UNIX)
+    if (${CMAKE_BUILD_TYPE} STREQUAL Debug)
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Og")
+    else ()
+        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+    endif()
+endif()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared flatbuffers library")
 set(FLATBUFFERS_BUILD_TESTS OFF CACHE BOOL "Build Flatbuffers with tests")
@@ -137,7 +147,7 @@ include_directories(
 	${LIBOBS_INCLUDE_DIR}
 )
 
-if(UNIX)
+if (UNIX)
 	target_link_libraries(${PROJECT_NAME} libobs)
 endif()
 
@@ -153,15 +163,9 @@ target_link_libraries(${PROJECT_NAME}
 	Qt5::Network
 )
 
-if(ARCH EQUAL 64)
-	set(ARCH_NAME "x86_64")
-else()
-	set(ARCH_NAME "i686")
-endif()
-
-set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
-
-if(UNIX)
+if (UNIX)
+	include(GNUInstallDirs)
+	set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 	install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/obs-plugins)
 	install(DIRECTORY locale/ DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/obs/obs-plugins/hyperion-obs/locale)
 endif()
