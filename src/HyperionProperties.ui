@@ -7,8 +7,26 @@
     <x>0</x>
     <y>0</y>
     <width>455</width>
-    <height>244</height>
+    <height>270</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>455</width>
+    <height>270</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>455</width>
+    <height>270</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>UI.Title</string>
@@ -19,7 +37,7 @@
      <x>40</x>
      <y>10</y>
      <width>381</width>
-     <height>171</height>
+     <height>211</height>
     </rect>
    </property>
    <layout class="QVBoxLayout" name="Hyperion">
@@ -33,48 +51,6 @@
      <layout class="QHBoxLayout" name="HyperionOutputConfig">
       <item>
        <layout class="QGridLayout" name="gridLayout">
-        <item row="1" column="0">
-         <widget class="QLabel" name="AddressLabel">
-          <property name="toolTip">
-           <string/>
-          </property>
-          <property name="text">
-           <string>UI.Address</string>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="2">
-         <widget class="QSpinBox" name="Port">
-          <property name="toolTip">
-           <string>UI.PortTip</string>
-          </property>
-          <property name="alignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="minimum">
-           <number>1</number>
-          </property>
-          <property name="maximum">
-           <number>65535</number>
-          </property>
-          <property name="value">
-           <number>19400</number>
-          </property>
-         </widget>
-        </item>
-        <item row="1" column="1">
-         <widget class="QLineEdit" name="Address">
-          <property name="toolTip">
-           <string>UI.AddressTip</string>
-          </property>
-          <property name="text">
-           <string notr="true">localhost</string>
-          </property>
-          <property name="placeholderText">
-           <string/>
-          </property>
-         </widget>
-        </item>
         <item row="2" column="0">
          <widget class="QLabel" name="SizeDecimationLabel">
           <property name="toolTip">
@@ -82,6 +58,16 @@
           </property>
           <property name="text">
            <string>UI.SizeDecimation</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="AddressLabel">
+          <property name="toolTip">
+           <string/>
+          </property>
+          <property name="text">
+           <string>UI.Address</string>
           </property>
          </widget>
         </item>
@@ -104,6 +90,64 @@
           </property>
           <property name="value">
            <number>8</number>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="QLineEdit" name="Address">
+          <property name="toolTip">
+           <string>UI.AddressTip</string>
+          </property>
+          <property name="text">
+           <string notr="true">localhost</string>
+          </property>
+          <property name="placeholderText">
+           <string/>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QSpinBox" name="Port">
+          <property name="toolTip">
+           <string>UI.PortTip</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>65535</number>
+          </property>
+          <property name="value">
+           <number>19400</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="QSpinBox" name="Priority">
+          <property name="toolTip">
+           <string>UI.PriorityTip</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+          </property>
+          <property name="minimum">
+           <number>100</number>
+          </property>
+          <property name="maximum">
+           <number>199</number>
+          </property>
+          <property name="value">
+           <number>150</number>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="QLabel" name="PriorityLabel">
+          <property name="text">
+           <string>UI.Priority</string>
           </property>
          </widget>
         </item>
@@ -140,9 +184,9 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>190</y>
+     <y>230</y>
      <width>379</width>
-     <height>41</height>
+     <height>31</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="HyperionStreamControl">

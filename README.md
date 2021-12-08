@@ -11,7 +11,7 @@ The idea for this plugin originated from a fork of [Murat Seker][m-seker].
 
 ## Usage with hyperion-obs
 
-- Open OBS and select the menu entry `Tools > Hyperion Output`.
+- Open OBS and select the menu entry `Tools > Hyperion Streaming`.
 - Enter the flatbuffer destination IP and select the appropriate port.
 - Click the `Start` button.
 
@@ -25,13 +25,19 @@ The idea for this plugin originated from a fork of [Murat Seker][m-seker].
 sudo apt install qtbase5-dev libobs-dev
 ```
 
+- Get OBS Studio source code
+
+```
+git clone --recursive https://github.com/obsproject/obs-studio.git
+```
+
 - Build plugin
 
 ```
 git clone --recursive https://github.com/hyperion-project/hyperion-obs-plugin.git
 cd hyperion-obs-plugin
 mkdir build && cd build
-cmake -DCMAKE_INSTALL_PREFIX=/usr ..
+cmake -DOBS_SOURCE="../../obs-studio" -DCMAKE_INSTALL_PREFIX=/usr ..
 make -j $(nproc)
 sudo make install
 ```

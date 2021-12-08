@@ -5,9 +5,10 @@
 
 #include <QString>
 
-const int  DEFAULT_SIZEDECIMATION = 8;
+const int DEFAULT_SIZEDECIMATION = 8;
+const int DEFAULT_PRIORITY = 150;
 
-void hyperion_start_streaming(QString& address, int port,int sizeDecimation = DEFAULT_SIZEDECIMATION);
+void hyperion_start_streaming(QString& address, int port, int priority = DEFAULT_PRIORITY, int sizeDecimation = DEFAULT_SIZEDECIMATION);
 void hyperion_stop_streaming();
 void hyperion_release();
 signal_handler_t* hyperion_get_signal_handler();

@@ -11,12 +11,14 @@ namespace Ui {
 const char OBS_SETTINGS_AUTOSTART[] = "AutoStart";
 const char OBS_SETTINGS_ADDRESS[] = "Address";
 const char OBS_SETTINGS_PORT[] = "Port";
+const char OBS_SETTINGS_PRIORITY[] = "Priority";
 const char OBS_SETTINGS_SIZEDECIMATION[] = "SizeDecimation";
 
-const bool OBS_SETTINGS_DEFAULT_AUTOSTART = false;
-const char OBS_SETTINGS_DEFAULT_ADDRESS[] = "localhost";
-const int OBS_SETTINGS_DEFAULT_PORT = 19400;
-const int OBS_SETTINGS_DEFAULT_SIZEDECIMATION = DEFAULT_SIZEDECIMATION;
+// const bool OBS_SETTINGS_DEFAULT_AUTOSTART = false;
+// const char OBS_SETTINGS_DEFAULT_ADDRESS[] = "localhost";
+// const int OBS_SETTINGS_DEFAULT_PORT = 19400;
+// const int OBS_SETTINGS_DEFAULT_PRIORITY = 150;
+// const int OBS_SETTINGS_DEFAULT_SIZEDECIMATION = DEFAULT_SIZEDECIMATION;
 
 class HyperionProperties : public QDialog
 {
@@ -26,7 +28,8 @@ public:
 	explicit HyperionProperties(QWidget *parent = nullptr);
 	~HyperionProperties() override;
 	void enableStart(bool enable);
-	void setWarningText(const char *msg);
+	void appendLogText(const char *msg);
+	void clearLog();
 	void saveSettings();
 
 private Q_SLOTS:
@@ -37,7 +40,6 @@ private:
 	Ui::HyperionProperties *ui;
 };
 
-static void output_started(void *data, calldata_t *cd);
 static void output_stopped(void *data, calldata_t *cd);
 static void logger_message(void *data, calldata_t *cd);
 

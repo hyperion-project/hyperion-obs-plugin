@@ -31,6 +31,12 @@ HyperionProperties::HyperionProperties(QWidget *parent)
 		ui->Port->setValue(port);
 	}
 
+	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_PRIORITY))
+	{
+		int priority = static_cast<int>(config_get_int(config, CONFIG_SECTION, OBS_SETTINGS_PRIORITY));
+		ui->Priority->setValue(priority);
+	}
+
 	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION))
 	{
 		int sizeDecimation = static_cast<int>(config_get_int(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION));
@@ -64,9 +70,14 @@ void HyperionProperties::enableStart(bool enable)
 	ui->ButtonStop->setEnabled(!enable);
 }
 
-void HyperionProperties::setWarningText(const char *msg)
+void HyperionProperties::appendLogText(const char *msg)
 {
 	ui->WarningText->appendPlainText(msg);
+}
+
+void HyperionProperties::clearLog()
+{
+	ui->WarningText->clear();
 }
 
 void HyperionProperties::saveSettings()
@@ -77,11 +88,13 @@ void HyperionProperties::saveSettings()
 		bool autostart = ui->AutoStart->isChecked();
 		QString address = ui->Address->text();
 		int port = ui->Port->value();
+		int priority = ui->Priority->value();
 		int sizeDecimation = ui->SizeDecimation->value();
 
 		config_set_bool(config, CONFIG_SECTION, OBS_SETTINGS_AUTOSTART, autostart);
 		config_set_string(config, CONFIG_SECTION, OBS_SETTINGS_ADDRESS, address.toLocal8Bit().constData());
 		config_set_int(config, CONFIG_SECTION, OBS_SETTINGS_PORT, port);
+		config_set_int(config, CONFIG_SECTION, OBS_SETTINGS_PRIORITY, priority);
 		config_set_int(config, CONFIG_SECTION, OBS_SETTINGS_SIZEDECIMATION, sizeDecimation);
 	}
 }
@@ -90,6 +103,7 @@ void HyperionProperties::onStart()
 {
 	QString address = ui->Address->text();
 	int port = ui->Port->value();
+	int priority = ui->Priority->value();
 	int sizeDecimation = ui->SizeDecimation->value();
 
 	signal_handler_t *handler = hyperion_get_signal_handler();
@@ -97,8 +111,8 @@ void HyperionProperties::onStart()
 	signal_handler_connect(handler, "log", logger_message, this);
 	
 	enableStart(false);
-	setWarningText("");
-	hyperion_start_streaming(address, port, sizeDecimation);
+	clearLog();
+	hyperion_start_streaming(address, port, priority, sizeDecimation);
 }
 
 void HyperionProperties::onStop()
@@ -115,12 +129,12 @@ static void output_stopped(void *data, calldata_t *cd)
 
 	if (running)
 	{
-		page->setWarningText(msg);
+		page->appendLogText(msg);
 	}
-		
+	
 	signal_handler_t *handler = obs_output_get_signal_handler(output);
 	page->enableStart(true);
-	signal_handler_disconnect(handler, "stop", output_stopped , page);
+	signal_handler_disconnect(handler, "stop", output_stopped, page);
 	signal_handler_disconnect(handler, "log", logger_message, page);
 }
 
@@ -129,5 +143,5 @@ static void logger_message(void *data, calldata_t *cd)
 	auto *page = static_cast<HyperionProperties*>(data);
 	auto *output = static_cast<obs_output_t*>(calldata_ptr(cd, "output"));
 	const char* msg = calldata_string(cd, "msg");
-	page->setWarningText(msg);
+	page->appendLogText(msg);
 }

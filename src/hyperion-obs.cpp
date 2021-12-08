@@ -13,13 +13,11 @@
 
 // Constants
 namespace {
-const char OBS_AUTHOR[] = "Hyperion-Project";
-const char OBS_MODULE_NAME[] = "hyperion-obs";
-const char OBS_DEFAULT_LOCALE[] = "en-US";
-const char OBS_OUTPUT_NAME[] = "Hyperion";
-const char OBS_MENU_ID[] = "UI.Menu";
-
-const int  FLATBUFFER_DEFAULT_PRIORITY = 150;
+	const char OBS_AUTHOR[] = "Hyperion-Project";
+	const char OBS_MODULE_NAME[] = "hyperion-obs";
+	const char OBS_DEFAULT_LOCALE[] = "en-US";
+	const char OBS_OUTPUT_NAME[] = "Hyperion";
+	const char OBS_MENU_ID[] = "UI.Menu";
 } //End of constants
 
 struct hyperion_output
@@ -63,23 +61,27 @@ void hyperion_signal_log(const char *msg)
 	calldata_free(&call_data);
 }
 
-int Connect(void *data)
+void Connect(void *data)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
-	if (!out_data->active)
+	if (out_data->active || out_data->client != nullptr)
 	{
-		out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), FLATBUFFER_DEFAULT_PRIORITY, obs_data_get_int(settings, OBS_SETTINGS_PORT));
+		delete out_data->client;
+		out_data->client = nullptr;
 	}
 
-	return 0;
+	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), obs_data_get_int(settings, OBS_SETTINGS_PRIORITY), obs_data_get_int(settings, OBS_SETTINGS_PORT));
 }
 
 static void Disconnect(void *data)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
-	delete out_data->client;
-	out_data->client = nullptr;
+	if (out_data->client != nullptr)
+	{
+		delete out_data->client;
+		out_data->client = nullptr;
+	}
 }
 
 static const char *hyperion_output_getname(void *unused)
@@ -122,17 +124,25 @@ static bool hyperion_output_start(void *data)
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	out_data->sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
 
-	int ret = Connect(data);
+	Connect(data);
 
-	struct video_scale_info conv;
-	conv.format = 	VIDEO_FORMAT_RGBA;
-	conv.width = obs_output_get_width(out_data->output);
-	conv.height = obs_output_get_height(out_data->output);
+	video_t *video = obs_output_video(out_data->output);
+	enum video_format format = video_output_get_format(video);
 
-	obs_output_set_video_conversion(out_data->output, &conv);
+	if (video_output_get_format(video) != VIDEO_FORMAT_RGBA)
+	{
+		struct video_scale_info conv;
+		conv.format = 	VIDEO_FORMAT_RGBA;
+		conv.width = obs_output_get_width(out_data->output);
+		conv.height = obs_output_get_height(out_data->output);
 
-	//video_t *video = obs_output_video(out_data->output);
-	//enum video_format format = video_output_get_format(video);
+		obs_output_set_video_conversion(out_data->output, &conv);
+	}
+	else
+	{
+		obs_output_set_video_conversion(out_data->output, nullptr);
+	}
+
 	// double video_frame_rate = video_output_get_frame_rate(video);
 
 	if (!obs_output_can_begin_data_capture(out_data->output, 0))
@@ -141,9 +151,7 @@ static bool hyperion_output_start(void *data)
 	}
 
 	out_data->active = true;
-
-	hyperion_signal_log("Let's GO");
-
+	hyperion_signal_log("hyperion-obs started");
 	return obs_output_begin_data_capture(out_data->output, 0);
 }
 
@@ -155,9 +163,9 @@ static void hyperion_output_stop(void *data, uint64_t ts)
 	if(out_data->active)
 	{
 		out_data->active = false;
-		obs_output_end_data_capture(out_data->output);	
+		obs_output_end_data_capture(out_data->output);
 		Disconnect(data);
-		hyperion_signal_stop("stop", false);
+		hyperion_signal_stop("hyperion-obs stopped", true);
 	}
 }
 
@@ -210,11 +218,6 @@ OBS_MODULE_USE_DEFAULT_LOCALE(OBS_MODULE_NAME, OBS_DEFAULT_LOCALE)
 
 bool obs_module_load(void)
 {
-#ifdef _WIN32
-	WSADATA wsad;
-	WSAStartup(MAKEWORD(2, 2), &wsad);
-#endif
-
 	qRegisterMetaType<Image<ColorRgb>>("Image<ColorRgb>");
 
 	obs_output_info hyperion_output_info = create_hyperion_output_info();
@@ -240,21 +243,20 @@ bool obs_module_load(void)
 
 	QAction::connect(action, &QAction::triggered, menu_cb);
 
-    return true;
+	return true;
 }
 
 void obs_module_unload(void)
 {
-#ifdef _WIN32
-	WSACleanup();
-#endif
+
 }
 
-void hyperion_start_streaming(QString& address, int port, int sizeDecimation)
+void hyperion_start_streaming(QString& address, int port, int priority, int sizeDecimation)
 {
 	obs_data_t *settings = obs_output_get_settings(_hyperionOutput);
 	obs_data_set_string(settings, OBS_SETTINGS_ADDRESS, address.toLocal8Bit().constData());
 	obs_data_set_int(settings, OBS_SETTINGS_PORT, port);
+	obs_data_set_int(settings, OBS_SETTINGS_PRIORITY, priority);
 	obs_data_set_int(settings, OBS_SETTINGS_SIZEDECIMATION, sizeDecimation);
 	obs_output_update(_hyperionOutput, settings);
 	obs_data_release(settings);
@@ -274,5 +276,5 @@ void hyperion_release()
 
 signal_handler_t* hyperion_get_signal_handler()
 {
-	return obs_output_get_signal_handler(_hyperionOutput);	
+	return obs_output_get_signal_handler(_hyperionOutput);
 }
