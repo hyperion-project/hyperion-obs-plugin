@@ -61,7 +61,7 @@ jobs:
           path: ${{ github.workspace }}/plugin
 
   Windows:
-    name: 'Windows x64'
+    name: 'Windows 64bit'
     runs-on: [windows-latest]
     env:
       QT_VERSION: '5.15.2'
@@ -125,7 +125,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/obs-studio/build
           key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
-          restore-keys: ${{ runner.os }}-build-cache-obs-
+          restore-keys: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
 
       - name: 'Configure OBS'
         if: steps.build-cache-obs.outputs.cache-hit != 'true'
