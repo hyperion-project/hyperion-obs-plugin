@@ -84,13 +84,6 @@ private slots:
 	///
 	void readData();
 
-	///
-	/// @brief Is called when the socket closed the connection
-	///
-	void disconnected();
-
-	void logMessage(const QString& message);
-
 private:
 
 	///
@@ -99,6 +92,8 @@ private:
 	/// @return true if the reply indicates success
 	///
 	bool parseReply(const hyperionnet::Reply *reply);
+
+	void logMessage(const QString& message);
 
 private:
 	/// The TCP-Socket with the connection to the server

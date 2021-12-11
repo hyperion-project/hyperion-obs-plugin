@@ -150,7 +150,6 @@ static bool hyperion_output_start(void *data)
 	}
 
 	out_data->active = true;
-	hyperion_signal_log("hyperion-obs started");
 	return obs_output_begin_data_capture(out_data->output, 0);
 }
 
@@ -164,7 +163,7 @@ static void hyperion_output_stop(void *data, uint64_t ts)
 		out_data->active = false;
 		obs_output_end_data_capture(out_data->output);
 		Disconnect(data);
-		hyperion_signal_stop("hyperion-obs stopped", true);
+		hyperion_signal_stop("stop", false);
 	}
 }
 

@@ -23,7 +23,7 @@ FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString&
 	, _registered(false)
 {
 	connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
-	connect(&_socket, &QTcpSocket::disconnected, this, &FlatBufferConnection::disconnected);
+	connect(&_socket, &QTcpSocket::disconnected, [=]() { this->logMessage("Connection to Hyperion server was closed"); });
 
 	// init connect
 	connectToHost();
@@ -69,19 +69,12 @@ void FlatBufferConnection::readData()
 			const hyperionnet::Reply* reply = hyperionnet::GetReply(msgData);
 			if (!parseReply(reply))
 			{
-				struct calldata call_data;
-				calldata_init(&call_data);
-				calldata_set_string(&call_data, "msg", QSTRING_CSTR(QString("Reply received with error: %1").arg(reply->error()->c_str())));
-				calldata_set_bool(&call_data, "running", true);
-				signal_handler_t *handler = hyperion_get_signal_handler();
-				signal_handler_signal(handler, "stop", &call_data);
-				calldata_free(&call_data);
-				delete this;
+				logMessage(QSTRING_CSTR(QString("Reply received with error: %1").arg(reply->error()->c_str())));
 			}
 			continue;
 		}
 
-		emit logMessage("Unable to parse reply");
+		logMessage("Unable to parse reply");
 	}
 }
 
@@ -134,15 +127,15 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 		switch (_socket.state() )
 		{
 			case QAbstractSocket::UnconnectedState:
-				emit logMessage(QString("No connection to Hyperion: %1:%2").arg(_host).arg(_port));
+				logMessage(QString("No connection to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
 			case QAbstractSocket::ConnectedState:
-				emit logMessage(QString("Connected to Hyperion: %1:%2").arg(_host).arg(_port));
+				logMessage(QString("Connected to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
 			default:
-				emit logMessage(QString("Connecting to Hyperion: %1:%2").arg(_host).arg(_port));
+				logMessage(QString("Connecting to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
-	  }
+		}
 	  _prevSocketState = _socket.state();
 	}
 
@@ -192,25 +185,11 @@ bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
 	return false;
 }
 
-void FlatBufferConnection::disconnected()
-{
-	struct calldata call_data;
-	calldata_init(&call_data);
-	calldata_set_string(&call_data, "msg", "Connection to Hyperion server was closed");
-	calldata_set_bool(&call_data, "running", true);
-	signal_handler_t *handler = hyperion_get_signal_handler();
-	signal_handler_signal(handler, "stop", &call_data);
-	calldata_free(&call_data);
-
-	_timer.stop();
-	_socket.close();
-}
-
 void FlatBufferConnection::logMessage(const QString& message)
 {
 	struct calldata call_data;
 	calldata_init(&call_data);
-	calldata_set_string(&call_data, "msg", message.toStdString().c_str());
+	calldata_set_string(&call_data, "msg", QSTRING_CSTR(message));
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_signal(handler, "log", &call_data);
 	calldata_free(&call_data);
