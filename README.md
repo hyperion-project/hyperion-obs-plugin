@@ -37,7 +37,7 @@ git clone --recursive https://github.com/obsproject/obs-studio.git
 git clone --recursive https://github.com/hyperion-project/hyperion-obs-plugin.git
 cd hyperion-obs-plugin
 mkdir build && cd build
-cmake -DOBS_SOURCE="PATH_TO_THE_OBS_SOURCE_CODE_DIRECTORY -DCMAKE_INSTALL_PREFIX=/usr ..
+cmake -DOBS_SOURCE=../../obs-studio -DCMAKE_INSTALL_PREFIX=/usr ..
 make -j $(nproc)
 sudo make install
 ```

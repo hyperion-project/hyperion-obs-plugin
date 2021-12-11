@@ -14,12 +14,6 @@ const char OBS_SETTINGS_PORT[] = "Port";
 const char OBS_SETTINGS_PRIORITY[] = "Priority";
 const char OBS_SETTINGS_SIZEDECIMATION[] = "SizeDecimation";
 
-// const bool OBS_SETTINGS_DEFAULT_AUTOSTART = false;
-// const char OBS_SETTINGS_DEFAULT_ADDRESS[] = "localhost";
-// const int OBS_SETTINGS_DEFAULT_PORT = 19400;
-// const int OBS_SETTINGS_DEFAULT_PRIORITY = 150;
-// const int OBS_SETTINGS_DEFAULT_SIZEDECIMATION = DEFAULT_SIZEDECIMATION;
-
 class HyperionProperties : public QDialog
 {
 	Q_OBJECT
@@ -32,7 +26,7 @@ public:
 	void clearLog();
 	void saveSettings();
 
-private Q_SLOTS:
+public Q_SLOTS:
 	void onStart();
 	void onStop();
 

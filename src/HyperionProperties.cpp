@@ -140,6 +140,7 @@ static void output_stopped(void *data, calldata_t *cd)
 
 static void logger_message(void *data, calldata_t *cd)
 {
+	UNUSED_PARAMETER(cd);
 	auto *page = static_cast<HyperionProperties*>(data);
 	const char* msg = calldata_string(cd, "msg");
 	page->appendLogText(msg);
