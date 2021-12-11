@@ -3,8 +3,6 @@ cmake_policy(SET CMP0071 NEW)
 project(hyperion-obs)
 file (STRINGS ".version" PLUGIN_VERSION)
 message(STATUS "hyperion-obs version: ${PLUGIN_VERSION}")
-set(PLUGIN_AUTHOR "hyperion-project")
-set(PLUGIN_GIT "hyperion-obs-plugin")
 
 # Macro to get path of first sub dir of a dir, used for MAC OSX lib/header searching
 MACRO(FIRSTSUBDIR result curdir)
@@ -75,6 +73,14 @@ endif()
 set(OBS_SOURCE "" CACHE PATH "Where is the source code of OBS-Studio located")
 set(OBS_BUILD "" CACHE PATH "Where is the build directory of OBS-Studio located")
 
+if(NOT EXISTS ${OBS_SOURCE})
+	message(FATAL_ERROR "OBS_SOURCE was not specified. Please specify the path to the OBS source.")
+endif()
+
+if (WIN32 AND NOT EXISTS ${OBS_BUILD})
+	message(FATAL_ERROR "OBS_BUILD was not specified. Please specify the path to the OBS build directory.")
+endif()
+
 set(LIBOBS_INCLUDE_DIR "${OBS_SOURCE}/libobs")
 set(OBS_FRONTEND_INCLUDE_DIR "${OBS_SOURCE}/UI/obs-frontend-api")
 
@@ -83,6 +89,11 @@ if (WIN32)
 	set(LIBOBS_LIB "${OBS_BUILD}/libobs/$<CONFIGURATION>/obs.lib")
 	set(OBS_FRONTEND_LIB "${OBS_BUILD}/UI/obs-frontend-api/$<CONFIGURATION>/obs-frontend-api.lib")
 	set(PTHREAD_LIB "${OBS_BUILD}/deps/w32-pthreads/$<CONFIGURATION>/w32-pthreads.lib")
+
+	set(PLUGIN_AUTHOR "hyperion-project")
+	set(PLUGIN_GIT "hyperion-obs-plugin")
+	set(PLUGIN_LICENSE "${CMAKE_SOURCE_DIR}/LICENSE")
+	set(PLUGIN_ICON "${CMAKE_SOURCE_DIR}/resources/installer.ico")
 endif()
 
 include(cmake/FindLibObs.cmake)
