@@ -6,7 +6,7 @@ jobs:
     name: 'Linux 64bit'
     runs-on: ubuntu-latest
     env:
-      minimum-obs-version: 25.0.0
+      minimum-obs-version: 25.0.3
       project-name: hyperion-obs
       project-git: https://github.com/hyperion-project/hyperion-obs-plugin
       maintainer: hyperion-project.org
