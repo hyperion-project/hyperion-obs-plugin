@@ -14,24 +14,6 @@ static void logger_message(void *data, calldata_t *cd)
 	page->appendLogText(msg);
 }
 
-static void output_stopped(void *data, calldata_t *cd)
-{
-	auto *page = static_cast<HyperionProperties*>(data);
-	auto *output = static_cast<obs_output_t*>(calldata_ptr(cd, "output"));
-	bool running = calldata_bool(cd, "running");
-	const char* msg = calldata_string(cd, "msg");
-
-	if (running)
-	{
-		page->appendLogText(msg);
-	}
-
-	signal_handler_t *handler = obs_output_get_signal_handler(output);
-	page->enableStart(true);
-	signal_handler_disconnect(handler, "stop", output_stopped, page);
-	signal_handler_disconnect(handler, "log", logger_message, page);
-}
-
 HyperionProperties::HyperionProperties(QWidget *parent)
 	: QDialog(parent)
 	, ui(new Ui::HyperionProperties)
