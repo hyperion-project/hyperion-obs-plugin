@@ -16,6 +16,14 @@ The idea for this plugin originated from a [Hyperion.ng][hyperion] fork of [Mura
 
 ![hyperion-obs](screenshot/hyperion-obs.png)
 
+## Contributing
+
+Contributions are welcome! Feel free to join us! We are looking always for people who wants to participate.<br>
+[![Contributors](https://img.shields.io/github/contributors/hyperion-project/hyperion-obs-plugin.svg?label=Contributors)](https://github.com/hyperion-project/hyperion-obs-plugin/graphs/contributors)
+
+For an example, you can participate in the translation.<br>
+[![Join Translation](https://img.shields.io/badge/POEditor-translate-green.svg)](https://poeditor.com/join/project?hash=0diZuCpLVX)
+
 ## Download
 
 See [Release Page](https://github.com/hyperion-project/hyperion-obs-plugin/releases)
