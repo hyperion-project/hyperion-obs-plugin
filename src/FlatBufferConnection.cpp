@@ -125,7 +125,7 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 		switch (socketState)
 		{
 			case QAbstractSocket::UnconnectedState:
-				emit logMessage(QString("No connection to %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("No connection to %1, port: %2").arg(_host).arg(_port));
 				break;
 			case QAbstractSocket::ConnectingState:
 				emit logMessage(QString("Connecting to %1, port: %2").arg(_host).arg(_port));
