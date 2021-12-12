@@ -54,7 +54,7 @@ jobs:
           sudo mv ${{ github.workspace }}/plugin/*.deb ${{ github.workspace }}/plugin/${{ env.project-name }}.${{ env.VERSION }}.linux.x64.deb
 
       - name: Upload plugin
-        if: startsWith(github.event.ref, 'refs/tags')
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v2
         with:
           name: hyperion-obs
@@ -163,7 +163,7 @@ jobs:
           iscc .\build\Windows.iss /O. /F"hyperion-obs.${{ env.VERSION }}.windows.x64"
 
       - name: Upload plugin
-        if: startsWith(github.event.ref, 'refs/tags')
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v2
         with:
           name: 'hyperion-obs.${{ env.VERSION }}.windows.x64'
