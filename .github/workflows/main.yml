@@ -6,9 +6,9 @@ jobs:
     name: 'Linux 64bit'
     runs-on: ubuntu-latest
     env:
-      obs-studio-version: 25.0.0
+      minimum-obs-version: 25.0.0
       project-name: hyperion-obs
-      project-git: hyperion-obs-plugin
+      project-git: https://github.com/hyperion-project/hyperion-obs-plugin
       maintainer: hyperion-project.org
 
     steps:
@@ -48,8 +48,8 @@ jobs:
             --exclude="/usr/include/flatbuffers,/usr/bin,/usr/lib/x86_64-linux-gnu/cmake,/usr/lib/x86_64-linux-gnu/pkgconfig" \
             --pkglicense="MIT" --maintainer="${{ env.maintainer }}" \
             --pkggroup="video" \
-            --pkgsource="https://github.com/${{ env.project-git }}" \
-            --requires="obs-studio \(\>= ${{ env.obs-studio-version }}\)" \
+            --pkgsource="${{ env.project-git }}" \
+            --requires="obs-studio \(\>= ${{ env.minimum-obs-version }}\)" \
             --pakdir="${{ github.workspace }}/plugin"
           sudo mv ${{ github.workspace }}/plugin/*.deb ${{ github.workspace }}/plugin/${{ env.project-name }}.${{ env.VERSION }}.linux.x64.deb
 
@@ -69,8 +69,6 @@ jobs:
       CEF_WRAPPER: 'cef_binary_75.1.16+g16a67c4+chromium-75.0.3770.100_windows64_minimal'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0"
-      project-git: hyperion-obs-plugin
-      project-name: hyperion-project.org
 
     steps:
       - name: Checkout hyperion-obs
@@ -125,7 +123,7 @@ jobs:
         with:
           path: ${{ github.workspace }}/obs-studio/build
           key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
-          restore-keys: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
+          restore-keys: ${{ runner.os }}-build-cache-obs-
 
       - name: 'Configure OBS'
         if: steps.build-cache-obs.outputs.cache-hit != 'true'
