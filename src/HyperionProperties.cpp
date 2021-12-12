@@ -6,9 +6,8 @@
 
 #define CONFIG_SECTION "HyperionOutput"
 
-static void logger_message(void *data, calldata_t *cd)
+static void logger_message(void *data, calldata_t * cd)
 {
-	UNUSED_PARAMETER(cd);
 	auto *page = static_cast<HyperionProperties*>(data);
 	const char* msg = calldata_string(cd, "msg");
 	page->appendLogText(msg);
@@ -72,8 +71,14 @@ HyperionProperties::HyperionProperties(QWidget *parent)
 
 HyperionProperties::~HyperionProperties()
 {
+	signal_handler_t *handler = hyperion_get_signal_handler();
+	signal_handler_disconnect(handler, "start", OnStartSignal , this);
+	signal_handler_disconnect(handler, "stop", OnStopSignal , this);
+	signal_handler_disconnect(handler, "log", logger_message, this);
+
 	saveSettings();
 	hyperion_release();
+
 	delete ui;
 }
 

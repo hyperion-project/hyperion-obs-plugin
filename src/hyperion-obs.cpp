@@ -71,6 +71,7 @@ void Connect(void *data)
 
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), obs_data_get_int(settings, OBS_SETTINGS_PRIORITY), obs_data_get_int(settings, OBS_SETTINGS_PORT));
+	obs_data_release(settings);
 
 	QObject::connect(out_data->client, &FlatBufferConnection::serverDisconnected, [=]()
 	{
@@ -84,13 +85,12 @@ void Connect(void *data)
 	});
 }
 
-static const char *hyperion_output_getname(void *unused)
+static const char *hyperion_output_getname(void * /*unused*/)
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("Hyperion OBS Output");
 }
 
-static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
+static void *hyperion_output_create(obs_data_t * /*settings*/, obs_output_t *output)
 {
 	hyperion_output *data = static_cast<hyperion_output*>(bzalloc(sizeof(struct hyperion_output)));
 	data->output = output;
@@ -98,7 +98,6 @@ static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
 	pthread_mutex_init_value(&data->mutex);
 	if (pthread_mutex_init(&data->mutex, NULL) == 0)
 	{
-		UNUSED_PARAMETER(settings);
 		return data;
 	}
 
@@ -123,6 +122,7 @@ static bool hyperion_output_start(void *data)
 
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	out_data->sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
+	obs_data_release(settings);
 
 	Connect(data);
 
@@ -153,10 +153,9 @@ static bool hyperion_output_start(void *data)
 	return obs_output_begin_data_capture(out_data->output, 0);
 }
 
-static void hyperion_output_stop(void *data, uint64_t ts)
+static void hyperion_output_stop(void *data, uint64_t /*ts*/)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
-	UNUSED_PARAMETER(ts);
 
 	if(out_data->active)
 	{
@@ -244,7 +243,6 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
-
 }
 
 void hyperion_start_streaming(QString& address, int port, int priority, int sizeDecimation)
