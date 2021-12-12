@@ -34,7 +34,4 @@ private:
 	Ui::HyperionProperties *ui;
 };
 
-static void output_stopped(void *data, calldata_t *cd);
-static void logger_message(void *data, calldata_t *cd);
-
 #endif // HYPERIONPROPERTIES_H
