@@ -169,7 +169,7 @@
      </spacer>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="WarningText">
+     <widget class="QPlainTextEdit" name="LogText">
       <property name="readOnly">
        <bool>true</bool>
       </property>

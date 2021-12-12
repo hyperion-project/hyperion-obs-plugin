@@ -32,6 +32,9 @@ public Q_SLOTS:
 
 private:
 	Ui::HyperionProperties *ui;
+
+	static void OnStartSignal(void *data, calldata_t *cd);
+	static void OnStopSignal(void *data, calldata_t *cd);
 };
 
 #endif // HYPERIONPROPERTIES_H

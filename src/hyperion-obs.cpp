@@ -40,17 +40,6 @@ void hyperion_signal_init(const char *signal)
 	signal_handler_add(handler, signal);
 }
 
-void hyperion_signal_stop(const char *msg, bool running)
-{
-	struct calldata call_data;
-	calldata_init(&call_data);
-	calldata_set_string(&call_data, "msg", msg);
-	calldata_set_bool(&call_data, "running", running);
-	signal_handler_t *handler = hyperion_get_signal_handler();
-	signal_handler_signal(handler, "stop", &call_data);
-	calldata_free(&call_data);
-}
-
 void hyperion_signal_log(const char *msg)
 {
 	struct calldata call_data;
@@ -85,7 +74,7 @@ void Connect(void *data)
 
 	QObject::connect(out_data->client, &FlatBufferConnection::serverDisconnected, [=]()
 	{
-		hyperion_signal_stop("Connection to Hyperion server was closed", true);
+		hyperion_signal_log("Connection to Hyperion server was closed");
 		obs_output_end_data_capture(_hyperionOutput);
 	});
 
@@ -174,7 +163,6 @@ static void hyperion_output_stop(void *data, uint64_t ts)
 		out_data->active = false;
 		obs_output_end_data_capture(out_data->output);
 		Disconnect(data);
-		hyperion_signal_stop("stop", false);
 	}
 }
 
@@ -234,7 +222,7 @@ bool obs_module_load(void)
 	obs_data_t *settings = obs_data_create();
 	_hyperionOutput = obs_output_create("hyperion_output", OBS_OUTPUT_NAME, settings, nullptr);
 	obs_data_release(settings);
-	hyperion_signal_init("void stop(string msg, bool running)");
+
 	hyperion_signal_init("void log(string msg)");
 
 	QMainWindow* main_window = static_cast<QMainWindow*>(obs_frontend_get_main_window());
