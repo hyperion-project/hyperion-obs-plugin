@@ -121,7 +121,7 @@ jobs:
         id: build-cache-obs
         uses: actions/cache@v1
         with:
-          path: ${{ github.workspace }}/obs-studio/build
+          path: ${{ github.workspace }}\obs-studio\build
           key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
           restore-keys: ${{ runner.os }}-build-cache-obs-
 
