@@ -118,26 +118,32 @@ void FlatBufferConnection::connectToHost()
 
 void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 {
-	// print out connection message only when state is changed
-	if (_socket.state() != _prevSocketState )
+	QAbstractSocket::SocketState socketState = _socket.state();
+	if (socketState != _prevSocketState )
 	{
 		_registered = false;
-		switch (_socket.state() )
+		switch (socketState)
 		{
 			case QAbstractSocket::UnconnectedState:
-				emit logMessage(QString("No connection to Hyperion: %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("No connection to %1:%2").arg(_host).arg(_port));
+				break;
+			case QAbstractSocket::ConnectingState:
+				emit logMessage(QString("Connecting to %1, port: %2").arg(_host).arg(_port));
 				break;
 			case QAbstractSocket::ConnectedState:
-				emit logMessage(QString("Connected to Hyperion: %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("Connected to %1, port: %2").arg(_host).arg(_port));
+				break;
+			case QAbstractSocket::ClosingState:
+				emit logMessage(QString("Closing connection to %1, port: %2").arg(_host).arg(_port));
 				break;
 			default:
-				emit logMessage(QString("Connecting to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
+
 		}
-	  _prevSocketState = _socket.state();
+	  	_prevSocketState = socketState;
 	}
 
-	if (_socket.state() == QAbstractSocket::ConnectedState)
+	if (socketState == QAbstractSocket::ConnectedState)
 	{
 		if(!_registered)
 		{

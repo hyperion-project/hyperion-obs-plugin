@@ -75,7 +75,7 @@ void Connect(void *data)
 
 	QObject::connect(out_data->client, &FlatBufferConnection::serverDisconnected, [=]()
 	{
-		hyperion_signal_log("Connection to Hyperion server was closed");
+		hyperion_signal_log("Connection to Hyperion server closed");
 		obs_output_end_data_capture(_hyperionOutput);
 	});
 
