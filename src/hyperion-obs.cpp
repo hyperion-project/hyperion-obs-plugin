@@ -17,7 +17,7 @@ namespace {
 	const char OBS_MODULE_NAME[] = "hyperion-obs";
 	const char OBS_DEFAULT_LOCALE[] = "en-US";
 	const char OBS_OUTPUT_NAME[] = "Hyperion";
-	const char OBS_MENU_ID[] = "UI.Menu";
+	const char OBS_MENU_ID[] = "UI_Menu";
 } //End of constants
 
 struct hyperion_output
