@@ -17,7 +17,7 @@ namespace {
 	const char OBS_MODULE_NAME[] = "hyperion-obs";
 	const char OBS_DEFAULT_LOCALE[] = "en-US";
 	const char OBS_OUTPUT_NAME[] = "Hyperion";
-	const char OBS_MENU_ID[] = "UI.Menu";
+	const char OBS_MENU_ID[] = "UI_Menu";
 } //End of constants
 
 struct hyperion_output
@@ -38,17 +38,6 @@ void hyperion_signal_init(const char *signal)
 {
 	signal_handler_t *handler = hyperion_get_signal_handler();
 	signal_handler_add(handler, signal);
-}
-
-void hyperion_signal_stop(const char *msg, bool running)
-{
-	struct calldata call_data;
-	calldata_init(&call_data);
-	calldata_set_string(&call_data, "msg", msg);
-	calldata_set_bool(&call_data, "running", running);
-	signal_handler_t *handler = hyperion_get_signal_handler();
-	signal_handler_signal(handler, "stop", &call_data);
-	calldata_free(&call_data);
 }
 
 void hyperion_signal_log(const char *msg)
@@ -82,10 +71,11 @@ void Connect(void *data)
 
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), obs_data_get_int(settings, OBS_SETTINGS_PRIORITY), obs_data_get_int(settings, OBS_SETTINGS_PORT));
+	obs_data_release(settings);
 
 	QObject::connect(out_data->client, &FlatBufferConnection::serverDisconnected, [=]()
 	{
-		hyperion_signal_stop("Connection to Hyperion server was closed", true);
+		hyperion_signal_log("Connection to Hyperion server closed");
 		obs_output_end_data_capture(_hyperionOutput);
 	});
 
@@ -95,13 +85,12 @@ void Connect(void *data)
 	});
 }
 
-static const char *hyperion_output_getname(void *unused)
+static const char *hyperion_output_getname(void * /*unused*/)
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("Hyperion OBS Output");
 }
 
-static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
+static void *hyperion_output_create(obs_data_t * /*settings*/, obs_output_t *output)
 {
 	hyperion_output *data = static_cast<hyperion_output*>(bzalloc(sizeof(struct hyperion_output)));
 	data->output = output;
@@ -109,7 +98,6 @@ static void *hyperion_output_create(obs_data_t *settings, obs_output_t *output)
 	pthread_mutex_init_value(&data->mutex);
 	if (pthread_mutex_init(&data->mutex, NULL) == 0)
 	{
-		UNUSED_PARAMETER(settings);
 		return data;
 	}
 
@@ -134,6 +122,7 @@ static bool hyperion_output_start(void *data)
 
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
 	out_data->sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
+	obs_data_release(settings);
 
 	Connect(data);
 
@@ -164,17 +153,15 @@ static bool hyperion_output_start(void *data)
 	return obs_output_begin_data_capture(out_data->output, 0);
 }
 
-static void hyperion_output_stop(void *data, uint64_t ts)
+static void hyperion_output_stop(void *data, uint64_t /*ts*/)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
-	UNUSED_PARAMETER(ts);
 
 	if(out_data->active)
 	{
 		out_data->active = false;
 		obs_output_end_data_capture(out_data->output);
 		Disconnect(data);
-		hyperion_signal_stop("stop", false);
 	}
 }
 
@@ -234,7 +221,7 @@ bool obs_module_load(void)
 	obs_data_t *settings = obs_data_create();
 	_hyperionOutput = obs_output_create("hyperion_output", OBS_OUTPUT_NAME, settings, nullptr);
 	obs_data_release(settings);
-	hyperion_signal_init("void stop(string msg, bool running)");
+
 	hyperion_signal_init("void log(string msg)");
 
 	QMainWindow* main_window = static_cast<QMainWindow*>(obs_frontend_get_main_window());
@@ -256,7 +243,6 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
-
 }
 
 void hyperion_start_streaming(QString& address, int port, int priority, int sizeDecimation)

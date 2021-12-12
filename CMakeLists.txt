@@ -70,6 +70,12 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${qt_module_path}")
 endif()
 
+if(NOT EXISTS ${OBS_SOURCE})
+	if (DEFINED ENV{OBS_SOURCE})
+		set(OBS_SOURCE $ENV{OBS_SOURCE})
+	endif()
+endif()	
+
 set(OBS_SOURCE "" CACHE PATH "Where is the source code of OBS-Studio located")
 set(OBS_BUILD "" CACHE PATH "Where is the build directory of OBS-Studio located")
 

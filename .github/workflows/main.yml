@@ -6,7 +6,7 @@ jobs:
     name: 'Linux 64bit'
     runs-on: ubuntu-latest
     env:
-      minimum-obs-version: 25.0.0
+      minimum-obs-version: 25.0.3
       project-name: hyperion-obs
       project-git: https://github.com/hyperion-project/hyperion-obs-plugin
       maintainer: hyperion-project.org
@@ -54,7 +54,7 @@ jobs:
           sudo mv ${{ github.workspace }}/plugin/*.deb ${{ github.workspace }}/plugin/${{ env.project-name }}.${{ env.VERSION }}.linux.x64.deb
 
       - name: Upload plugin
-        if: startsWith(github.event.ref, 'refs/tags')
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v2
         with:
           name: hyperion-obs
@@ -121,7 +121,7 @@ jobs:
         id: build-cache-obs
         uses: actions/cache@v1
         with:
-          path: ${{ github.workspace }}/obs-studio/build
+          path: ${{ github.workspace }}\obs-studio\build
           key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
           restore-keys: ${{ runner.os }}-build-cache-obs-
 
@@ -163,7 +163,7 @@ jobs:
           iscc .\build\Windows.iss /O. /F"hyperion-obs.${{ env.VERSION }}.windows.x64"
 
       - name: Upload plugin
-        if: startsWith(github.event.ref, 'refs/tags')
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v2
         with:
           name: 'hyperion-obs.${{ env.VERSION }}.windows.x64'

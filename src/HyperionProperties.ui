@@ -29,7 +29,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>UI.Title</string>
+   <string>UI_Title</string>
   </property>
   <widget class="QWidget" name="layoutWidget">
    <property name="geometry">
@@ -57,7 +57,7 @@
            <string/>
           </property>
           <property name="text">
-           <string>UI.SizeDecimation</string>
+           <string>UI_SizeDecimation</string>
           </property>
          </widget>
         </item>
@@ -67,14 +67,14 @@
            <string/>
           </property>
           <property name="text">
-           <string>UI.Address</string>
+           <string>UI_Address</string>
           </property>
          </widget>
         </item>
         <item row="2" column="2">
          <widget class="QSpinBox" name="SizeDecimation">
           <property name="toolTip">
-           <string>UI.SizeDecimationTip</string>
+           <string>UI_SizeDecimationTip</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -96,7 +96,7 @@
         <item row="1" column="1">
          <widget class="QLineEdit" name="Address">
           <property name="toolTip">
-           <string>UI.AddressTip</string>
+           <string>UI_AddressTip</string>
           </property>
           <property name="text">
            <string notr="true">localhost</string>
@@ -109,7 +109,7 @@
         <item row="1" column="2">
          <widget class="QSpinBox" name="Port">
           <property name="toolTip">
-           <string>UI.PortTip</string>
+           <string>UI_PortTip</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -128,16 +128,16 @@
         <item row="3" column="2">
          <widget class="QSpinBox" name="Priority">
           <property name="toolTip">
-           <string>UI.PriorityTip</string>
+           <string>UI_PriorityTip</string>
           </property>
           <property name="alignment">
            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
           </property>
           <property name="minimum">
-           <number>100</number>
+           <number>2</number>
           </property>
           <property name="maximum">
-           <number>199</number>
+           <number>253</number>
           </property>
           <property name="value">
            <number>150</number>
@@ -147,7 +147,7 @@
         <item row="3" column="0">
          <widget class="QLabel" name="PriorityLabel">
           <property name="text">
-           <string>UI.Priority</string>
+           <string>UI_Priority</string>
           </property>
          </widget>
         </item>
@@ -169,7 +169,16 @@
      </spacer>
     </item>
     <item>
-     <widget class="QPlainTextEdit" name="WarningText">
+     <widget class="QPlainTextEdit" name="LogText">
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="sizeAdjustPolicy">
+       <enum>QAbstractScrollArea::AdjustIgnored</enum>
+      </property>
+      <property name="lineWrapMode">
+       <enum>QPlainTextEdit::NoWrap</enum>
+      </property>
       <property name="readOnly">
        <bool>true</bool>
       </property>
@@ -205,10 +214,10 @@
        <bool>true</bool>
       </property>
       <property name="toolTip">
-       <string>UI.AutoStartTip</string>
+       <string>UI_AutoStartTip</string>
       </property>
       <property name="text">
-       <string>UI.AutoStart</string>
+       <string>UI_AutoStart</string>
       </property>
       <property name="tristate">
        <bool>false</bool>
@@ -218,7 +227,7 @@
     <item>
      <widget class="QPushButton" name="ButtonStart">
       <property name="toolTip">
-       <string>UI.StartTip</string>
+       <string>UI_StartTip</string>
       </property>
       <property name="text">
        <string>Start</string>
@@ -228,7 +237,7 @@
     <item>
      <widget class="QPushButton" name="ButtonStop">
       <property name="toolTip">
-       <string>UI.StopTip</string>
+       <string>UI_StopTip</string>
       </property>
       <property name="text">
        <string>Stop</string>
