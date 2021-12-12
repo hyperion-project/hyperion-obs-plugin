@@ -61,19 +61,6 @@ void hyperion_signal_log(const char *msg)
 	calldata_free(&call_data);
 }
 
-void Connect(void *data)
-{
-	hyperion_output *out_data = static_cast<hyperion_output*>(data);
-	obs_data_t *settings = obs_output_get_settings(out_data->output);
-	if (out_data->active || out_data->client != nullptr)
-	{
-		delete out_data->client;
-		out_data->client = nullptr;
-	}
-
-	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), obs_data_get_int(settings, OBS_SETTINGS_PRIORITY), obs_data_get_int(settings, OBS_SETTINGS_PORT));
-}
-
 static void Disconnect(void *data)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
@@ -82,6 +69,30 @@ static void Disconnect(void *data)
 		delete out_data->client;
 		out_data->client = nullptr;
 	}
+}
+
+void Connect(void *data)
+{
+	hyperion_output *out_data = static_cast<hyperion_output*>(data);
+	if (out_data->active || out_data->client != nullptr)
+	{
+		delete out_data->client;
+		out_data->client = nullptr;
+	}
+
+	obs_data_t *settings = obs_output_get_settings(out_data->output);
+	out_data->client = new FlatBufferConnection(OBS_MODULE_NAME, obs_data_get_string(settings, OBS_SETTINGS_ADDRESS), obs_data_get_int(settings, OBS_SETTINGS_PRIORITY), obs_data_get_int(settings, OBS_SETTINGS_PORT));
+
+	QObject::connect(out_data->client, &FlatBufferConnection::serverDisconnected, [=]()
+	{
+		hyperion_signal_stop("Connection to Hyperion server was closed", true);
+		obs_output_end_data_capture(_hyperionOutput);
+	});
+
+	QObject::connect(out_data->client, &FlatBufferConnection::logMessage, [=](const QString& message)
+	{
+		hyperion_signal_log(QSTRING_CSTR(message));
+	});
 }
 
 static const char *hyperion_output_getname(void *unused)
@@ -189,7 +200,6 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 		{
 			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
 		}
-
 
 		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
 		pthread_mutex_unlock(&out_data->mutex);

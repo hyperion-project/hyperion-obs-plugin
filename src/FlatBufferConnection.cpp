@@ -11,8 +11,6 @@
 #include "hyperion_reply_generated.h"
 #include "hyperion_request_generated.h"
 
-#define QSTRING_CSTR(str) str.toLocal8Bit().constData()
-
 FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString& host, int priority, quint16 port)
 	: _socket()
 	, _origin(origin)
@@ -23,7 +21,7 @@ FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString&
 	, _registered(false)
 {
 	connect(&_socket, &QTcpSocket::readyRead, this, &FlatBufferConnection::readData, Qt::UniqueConnection);
-	connect(&_socket, &QTcpSocket::disconnected, [=]() { this->logMessage("Connection to Hyperion server was closed"); });
+	connect(&_socket, &QTcpSocket::disconnected, this, &FlatBufferConnection::serverDisconnected);
 
 	// init connect
 	connectToHost();
@@ -69,18 +67,18 @@ void FlatBufferConnection::readData()
 			const hyperionnet::Reply* reply = hyperionnet::GetReply(msgData);
 			if (!parseReply(reply))
 			{
-				logMessage(QSTRING_CSTR(QString("Reply received with error: %1").arg(reply->error()->c_str())));
+				emit logMessage(QString("Reply received with error: %1").arg(reply->error()->c_str()));
 			}
 			continue;
 		}
 
-		logMessage("Unable to parse reply");
+		emit logMessage("Unable to parse reply");
 	}
 }
 
 void FlatBufferConnection::setRegister(const QString& origin, int priority)
 {
-	auto registerReq = hyperionnet::CreateRegister(_builder, _builder.CreateString(QSTRING_CSTR(origin)), priority);
+	auto registerReq = hyperionnet::CreateRegister(_builder, _builder.CreateString(origin.toLocal8Bit().constData()), priority);
 	auto req = hyperionnet::CreateRequest(_builder, hyperionnet::Command_Register, registerReq.Union());
 
 	_builder.Finish(req);
@@ -127,13 +125,13 @@ void FlatBufferConnection::sendMessage(const uint8_t* buffer, uint32_t size)
 		switch (_socket.state() )
 		{
 			case QAbstractSocket::UnconnectedState:
-				logMessage(QString("No connection to Hyperion: %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("No connection to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
 			case QAbstractSocket::ConnectedState:
-				logMessage(QString("Connected to Hyperion: %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("Connected to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
 			default:
-				logMessage(QString("Connecting to Hyperion: %1:%2").arg(_host).arg(_port));
+				emit logMessage(QString("Connecting to Hyperion: %1:%2").arg(_host).arg(_port));
 				break;
 		}
 	  _prevSocketState = _socket.state();
@@ -183,14 +181,4 @@ bool FlatBufferConnection::parseReply(const hyperionnet::Reply *reply)
 		return true;
 	}
 	return false;
-}
-
-void FlatBufferConnection::logMessage(const QString& message)
-{
-	struct calldata call_data;
-	calldata_init(&call_data);
-	calldata_set_string(&call_data, "msg", QSTRING_CSTR(message));
-	signal_handler_t *handler = hyperion_get_signal_handler();
-	signal_handler_signal(handler, "log", &call_data);
-	calldata_free(&call_data);
 }

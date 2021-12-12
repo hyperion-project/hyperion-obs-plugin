@@ -2,8 +2,9 @@
 #define HYPERIONOBS_H
 
 #include <callback/signal.h>
-
 #include <QString>
+
+#define QSTRING_CSTR(str) str.toLocal8Bit().constData()
 
 const int DEFAULT_SIZEDECIMATION = 8;
 const int DEFAULT_PRIORITY = 150;
