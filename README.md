@@ -3,15 +3,14 @@
 [![Latest-Release](https://img.shields.io/github/v/release/hyperion-project/hyperion-obs-plugin)](https://github.com/hyperion-project/hyperion-obs-plugin/releases)
 [![GitHub Actions](https://github.com/hyperion-project/hyperion-obs-plugin/workflows/hyperion-obs/badge.svg?branch=main)](https://github.com/hyperion-project/hyperion-obs-plugin/actions)
 
-An [OBS Studio][obs] plugin that provides output capabilities to a
-[Hyperion.ng][hyperion] Server.
-
+An [OBS Studio][obs] plugin that provides output capabilities to a [Hyperion.ng][hyperion] Server. \
 The idea for this plugin originated from a [Hyperion.ng][hyperion] fork of [Murat Seker][m-seker].
 
 ## Usage with hyperion-obs
 
 - Open OBS and select the menu entry `Tools > Hyperion Streaming`.
 - Enter the flatbuffer destination IP and select the appropriate port.
+- Optionally you can change the `Priority` or the image `Output Decimation` factor.
 - Click the `Start` button.
 
 ![hyperion-obs](screenshot/hyperion-obs.png)
@@ -67,4 +66,4 @@ sudo make install
 [obs]: https://obsproject.com/
 [obs_build]: https://github.com/obsproject/obs-studio/wiki/install-instructions#windows-build-directions
 [hyperion]: https://github.com/hyperion-project/hyperion.ng
-[m-seker]: https://github.com/m-seker/hyperion.ng/tree/feature/obs
+[m-seker]: https://github.com/m-seker

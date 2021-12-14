@@ -4,7 +4,6 @@
 
 #include <QMainWindow>
 #include <QAction>
-#include <QImage>
 
 #include "hyperion-obs.h"
 #include "HyperionProperties.h"
@@ -26,7 +25,6 @@ struct hyperion_output
 	FlatBufferConnection* client = nullptr;
 	uint32_t width = 0;
 	uint32_t height = 0;
-	int sizeDecimation = DEFAULT_SIZEDECIMATION;
 	bool active = false;
 	pthread_mutex_t mutex;
 };
@@ -117,30 +115,25 @@ static void hyperion_output_destroy(void *data)
 static bool hyperion_output_start(void *data)
 {
 	hyperion_output *out_data = static_cast<hyperion_output*>(data);
-	out_data->width = obs_output_get_width(out_data->output);
-	out_data->height = obs_output_get_height(out_data->output);
-
 	obs_data_t *settings = obs_output_get_settings(out_data->output);
-	out_data->sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
+	int sizeDecimation = obs_data_get_int(settings, OBS_SETTINGS_SIZEDECIMATION);
+
+	if ( sizeDecimation == 0)
+	{
+		sizeDecimation = DEFAULT_SIZEDECIMATION;
+	}
+
+	out_data->width = obs_output_get_width(out_data->output) / sizeDecimation;
+	out_data->height = obs_output_get_height(out_data->output) / sizeDecimation;
 	obs_data_release(settings);
 
 	Connect(data);
 
-	video_t *video = obs_output_video(out_data->output);
-
-	if (video_output_get_format(video) != VIDEO_FORMAT_RGBA)
-	{
-		struct video_scale_info conv;
-		conv.format = 	VIDEO_FORMAT_RGBA;
-		conv.width = obs_output_get_width(out_data->output);
-		conv.height = obs_output_get_height(out_data->output);
-
-		obs_output_set_video_conversion(out_data->output, &conv);
-	}
-	else
-	{
-		obs_output_set_video_conversion(out_data->output, nullptr);
-	}
+	struct video_scale_info conv;
+	conv.format = VIDEO_FORMAT_RGBA;
+	conv.width = out_data->width;
+	conv.height = out_data->height;
+	obs_output_set_video_conversion(out_data->output, &conv);
 
 	// double video_frame_rate = video_output_get_frame_rate(video);
 
@@ -173,22 +166,21 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 	{
 		pthread_mutex_lock(&out_data->mutex);
 
-		if ( out_data->sizeDecimation == 0)
-		{
-			out_data->sizeDecimation = DEFAULT_SIZEDECIMATION;
-		}
-		int outputWidth = out_data->width / out_data->sizeDecimation;
+		Image<ColorRgb> outputImage(out_data->width, out_data->height);
+		uint8_t* rgba = frame->data[0];
+		uint8_t* rgb = (uint8_t*)outputImage.memptr();
 
-		QImage RGBAImage(static_cast<const uchar*>(frame->data[0]), static_cast<int>(out_data->width), static_cast<int>(out_data->height), 4 * out_data->width, QImage::Format_RGBA8888);
-		QImage RGBImage = RGBAImage.scaledToWidth(outputWidth).convertToFormat(QImage::Format_RGB888);
-
-		Image<ColorRgb> outputImage(RGBImage.width(), RGBImage.height());
-		for (int y = 0; y < RGBImage.height(); y++)
+		int ptr_src = 0, ptr_dst = 0;
+		for (uint32_t i = 0; i < out_data->width * out_data->height; ++i)
 		{
-			memcpy((unsigned char*)outputImage.memptr() + y * outputImage.width() * 3, static_cast<unsigned char*>(RGBImage.scanLine(y)), RGBImage.width() * 3);
+			rgb[ptr_dst++] = rgba[ptr_src++];
+			rgb[ptr_dst++] = rgba[ptr_src++];
+			rgb[ptr_dst++] = rgba[ptr_src++];
+			ptr_src++;
 		}
 
 		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
+
 		pthread_mutex_unlock(&out_data->mutex);
 	}
 }
