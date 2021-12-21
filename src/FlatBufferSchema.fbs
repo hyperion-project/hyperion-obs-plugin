@@ -35,3 +35,11 @@ table Request {
 }
 
 root_type Request;
+
+table Reply {
+  error:string;
+  video:int = -1;
+  registered:int = -1;
+}
+
+root_type Reply;

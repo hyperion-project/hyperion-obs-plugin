@@ -1,15 +1,9 @@
 // stl includes
 #include <stdexcept>
 
-// Qt includes
-#include <QRgb>
-
-// flatbuffer includes
+// includes flatbuffer header and generated schema
 #include "FlatBufferConnection.h"
-
-// flatbuffer FBS
-#include "hyperion_reply_generated.h"
-#include "hyperion_request_generated.h"
+#include "FlatBufferSchema_generated.h"
 
 FlatBufferConnection::FlatBufferConnection(const QString& origin, const QString& host, int priority, quint16 port)
 	: _socket()
@@ -97,7 +91,7 @@ void FlatBufferConnection::setRegister(const QString& origin, int priority)
 	_builder.Clear();
 }
 
-void FlatBufferConnection::setImage(const Image<ColorRgb> &image)
+void FlatBufferConnection::setImage(const Image<ColorRgba> &image)
 {
 	auto imgData = _builder.CreateVector(reinterpret_cast<const uint8_t*>(image.memptr()), image.size());
 	auto rawImg = hyperionnet::CreateRawImage(_builder, imgData, image.width(), image.height());

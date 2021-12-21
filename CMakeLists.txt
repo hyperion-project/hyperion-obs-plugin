@@ -135,44 +135,29 @@ set(FLATBUFFERS_FLATC_EXECUTABLE "$<TARGET_FILE:flatc>")
 include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
 	${FLATBUFFERS_INCLUDE_DIRS}
+	${OBS_FRONTEND_INCLUDE_DIR}
+	${LIBOBS_INCLUDE_DIR}
 )
 
-set(Flatbuffer_GENERATED_FBS
-	hyperion_reply_generated.h
-	hyperion_request_generated.h
+set(FLATBUFFERS_SCHEMA "${CMAKE_SOURCE_DIR}/src/FlatBufferSchema.fbs")
+set(FLATBUFFERS_HEADER "${CMAKE_BINARY_DIR}/FlatBufferSchema_generated.h")
+
+add_custom_command(
+	OUTPUT ${FLATBUFFERS_HEADER}
+	COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE}
+	ARGS -c --no-includes --gen-mutable -o ${CMAKE_CURRENT_BINARY_DIR} ${FLATBUFFERS_SCHEMA}
+	DEPENDS ${FLATBUFFERS_FLATC_EXECUTABLE} ${FLATBUFFERS_SCHEMA}
+	COMMENT "Building Flatbuffer header file"
+	WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-set(Flatbuffer_FBS
-	${CMAKE_SOURCE_DIR}/src/hyperion_reply.fbs
-	${CMAKE_SOURCE_DIR}/src/hyperion_request.fbs
-)
-
-foreach(FBS_FILE ${Flatbuffer_FBS})
-	get_filename_component(FLATC_OUTPUT ${FBS_FILE} NAME_WE)
-	set(FLATC_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${FLATC_OUTPUT}_generated.h)
-
-	add_custom_command(
-		OUTPUT ${FLATC_OUTPUT}
-		COMMAND ${FLATBUFFERS_FLATC_EXECUTABLE}
-		ARGS -c --no-includes --gen-mutable -o ${CMAKE_CURRENT_BINARY_DIR} ${FBS_FILE}
-		DEPENDS ${FLATBUFFERS_FLATC_EXECUTABLE} ${FBS_FILE}
-		COMMENT "Building C++ header for ${FBS_FILE}"
-		WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	)
-endforeach()
-
-set_source_files_properties(${Flatbuffer_GENERATED_FBS} PROPERTIES GENERATED TRUE)
+set_source_files_properties(${FLATBUFFERS_HEADER} PROPERTIES GENERATED TRUE)
 
 FILE ( GLOB hyperion_obs_SOURCES "${CMAKE_SOURCE_DIR}/src/*.h" "${CMAKE_SOURCE_DIR}/src/*.cpp" )
 
 add_library(${PROJECT_NAME} MODULE
 	${hyperion_obs_SOURCES}
-	${Flatbuffer_GENERATED_FBS}
-)
-
-include_directories(
-	${OBS_FRONTEND_INCLUDE_DIR}
-	${LIBOBS_INCLUDE_DIR}
+	${FLATBUFFERS_HEADER}
 )
 
 if (UNIX)

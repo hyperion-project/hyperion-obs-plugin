@@ -135,7 +135,7 @@ static bool hyperion_output_start(void *data)
 	conv.height = out_data->height;
 	obs_output_set_video_conversion(out_data->output, &conv);
 
-	// double video_frame_rate = video_output_get_frame_rate(video);
+	// double video_frame_rate = video_output_get_frame_rate(video); //TODO
 
 	if (!obs_output_can_begin_data_capture(out_data->output, 0))
 	{
@@ -165,22 +165,9 @@ static void hyperion_output_raw_video(void *param, struct video_data *frame)
 	if(out_data->active)
 	{
 		pthread_mutex_lock(&out_data->mutex);
-
-		Image<ColorRgb> outputImage(out_data->width, out_data->height);
-		uint8_t* rgba = frame->data[0];
-		uint8_t* rgb = (uint8_t*)outputImage.memptr();
-
-		int ptr_src = 0, ptr_dst = 0;
-		for (uint32_t i = 0; i < out_data->width * out_data->height; ++i)
-		{
-			rgb[ptr_dst++] = rgba[ptr_src++];
-			rgb[ptr_dst++] = rgba[ptr_src++];
-			rgb[ptr_dst++] = rgba[ptr_src++];
-			ptr_src++;
-		}
-
-		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgb>, outputImage));
-
+		Image<ColorRgba> outputImage(out_data->width, out_data->height);
+		memmove(outputImage.memptr(), frame->data[0], out_data->width * out_data->height * sizeof(ColorRgba));
+		QMetaObject::invokeMethod(out_data->client, "setImage", Qt::QueuedConnection, Q_ARG(Image<ColorRgba>, outputImage));
 		pthread_mutex_unlock(&out_data->mutex);
 	}
 }
@@ -205,7 +192,7 @@ OBS_MODULE_USE_DEFAULT_LOCALE(OBS_MODULE_NAME, OBS_DEFAULT_LOCALE)
 
 bool obs_module_load(void)
 {
-	qRegisterMetaType<Image<ColorRgb>>("Image<ColorRgb>");
+	qRegisterMetaType<Image<ColorRgba>>("Image<ColorRgba>");
 
 	obs_output_info hyperion_output_info = create_hyperion_output_info();
 	obs_register_output(&hyperion_output_info);
