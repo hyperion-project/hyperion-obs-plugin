@@ -95,6 +95,7 @@ set(LIBOBS_INCLUDE_DIR "${OBS_SOURCE}/libobs")
 set(OBS_FRONTEND_INCLUDE_DIR "${OBS_SOURCE}/UI/obs-frontend-api")
 
 if (WIN32)
+	set(LibObs_DIR "${OBS_BUILD}/libobs")
 	set(LIBOBS_LIB "${OBS_BUILD}/libobs/$<CONFIGURATION>/obs.lib")
 	set(OBS_FRONTEND_LIB "${OBS_BUILD}/UI/obs-frontend-api/$<CONFIGURATION>/obs-frontend-api.lib")
 	set(PTHREAD_LIB "${OBS_BUILD}/deps/w32-pthreads/$<CONFIGURATION>/w32-pthreads.lib")
@@ -110,7 +111,6 @@ if (APPLE)
 	set(OBS_FRONTEND_LIB "${OBS_BUILD}/UI/obs-frontend-api/libobs-frontend-api.dylib")
 
 	set(BUNDLE_IDENTIFIER "com.hyperion-project.hyperion-obs")
-
 endif()
 
 include(cmake/FindLibObs.cmake)
@@ -241,13 +241,23 @@ if (APPLE)
 			-change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib
 			-change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib
 			-change ${CMAKE_PREFIX_PATH}/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore
+			-change @rpath/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore
 			-change ${CMAKE_PREFIX_PATH}/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui
+			-change @rpath/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui
 			-change ${CMAKE_PREFIX_PATH}/lib/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+			-change @rpath/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 			-change ${CMAKE_PREFIX_PATH}/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets
+			-change @rpath/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets
 			$<TARGET_FILE:${PROJECT_NAME}>
 	)
 
-	# Installs into home directory
-	install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/bin/")
-	install(DIRECTORY locale/ DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/data/locale")
+	if (GLOBAL_INSTALLATION)
+		# Install for all user
+		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/bin/")
+		install(DIRECTORY locale/ DESTINATION "/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/data/locale")
+	else()
+		# Install into home directory
+		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/bin/")
+		install(DIRECTORY locale/ DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/data/locale")
+	endif()
 endif()
