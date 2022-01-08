@@ -18,6 +18,7 @@ HyperionProperties::HyperionProperties(QWidget *parent)
 	, ui(new Ui::HyperionProperties)
 {
 	ui->setupUi(this);
+	this->setWindowFlags(this->windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	config_t* config = obs_frontend_get_global_config();
 	if (config_has_user_value(config, CONFIG_SECTION, OBS_SETTINGS_AUTOSTART))
