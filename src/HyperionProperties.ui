@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>455</width>
-    <height>270</height>
+    <height>280</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -19,13 +19,13 @@
   <property name="minimumSize">
    <size>
     <width>455</width>
-    <height>270</height>
+    <height>280</height>
    </size>
   </property>
   <property name="maximumSize">
    <size>
     <width>455</width>
-    <height>270</height>
+    <height>280</height>
    </size>
   </property>
   <property name="windowTitle">
@@ -170,11 +170,23 @@
     </item>
     <item>
      <widget class="QPlainTextEdit" name="LogText">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="horizontalScrollBarPolicy">
        <enum>Qt::ScrollBarAsNeeded</enum>
       </property>
       <property name="sizeAdjustPolicy">
        <enum>QAbstractScrollArea::AdjustIgnored</enum>
+      </property>
+      <property name="tabChangesFocus">
+       <bool>false</bool>
       </property>
       <property name="lineWrapMode">
        <enum>QPlainTextEdit::NoWrap</enum>
@@ -195,12 +207,12 @@
      <x>40</x>
      <y>230</y>
      <width>379</width>
-     <height>31</height>
+     <height>48</height>
     </rect>
    </property>
    <layout class="QHBoxLayout" name="HyperionStreamControl">
     <property name="spacing">
-     <number>0</number>
+     <number>5</number>
     </property>
     <property name="sizeConstraint">
      <enum>QLayout::SetDefaultConstraint</enum>
@@ -209,45 +221,88 @@
      <number>0</number>
     </property>
     <item>
-     <widget class="QCheckBox" name="AutoStart">
-      <property name="enabled">
-       <bool>true</bool>
+     <layout class="QHBoxLayout" name="Controls">
+      <property name="spacing">
+       <number>10</number>
       </property>
-      <property name="toolTip">
-       <string>UI_AutoStartTip</string>
+      <property name="sizeConstraint">
+       <enum>QLayout::SetDefaultConstraint</enum>
       </property>
-      <property name="text">
-       <string>UI_AutoStart</string>
-      </property>
-      <property name="tristate">
-       <bool>false</bool>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="ButtonStart">
-      <property name="toolTip">
-       <string>UI_StartTip</string>
-      </property>
-      <property name="text">
-       <string>Start</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="ButtonStop">
-      <property name="toolTip">
-       <string>UI_StopTip</string>
-      </property>
-      <property name="text">
-       <string>Stop</string>
-      </property>
-     </widget>
+      <item>
+       <layout class="QHBoxLayout" name="OBSConfig">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetFixedSize</enum>
+        </property>
+        <item>
+         <widget class="QCheckBox" name="AutoStart">
+          <property name="enabled">
+           <bool>true</bool>
+          </property>
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="toolTip">
+           <string>UI_AutoStartTip</string>
+          </property>
+          <property name="inputMethodHints">
+           <set>Qt::ImhNone</set>
+          </property>
+          <property name="text">
+           <string>UI_AutoStart</string>
+          </property>
+          <property name="tristate">
+           <bool>false</bool>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="ActionButtons">
+        <property name="spacing">
+         <number>4</number>
+        </property>
+        <item>
+         <widget class="QPushButton" name="ButtonStart">
+          <property name="toolTip">
+           <string>UI_StartTip</string>
+          </property>
+          <property name="text">
+           <string>Start</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="ButtonStop">
+          <property name="toolTip">
+           <string>UI_StopTip</string>
+          </property>
+          <property name="text">
+           <string>Stop</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
+ <tabstops>
+  <tabstop>Address</tabstop>
+  <tabstop>Port</tabstop>
+  <tabstop>SizeDecimation</tabstop>
+  <tabstop>Priority</tabstop>
+  <tabstop>AutoStart</tabstop>
+  <tabstop>ButtonStart</tabstop>
+  <tabstop>ButtonStop</tabstop>
+  <tabstop>LogText</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>
