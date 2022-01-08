@@ -3,17 +3,11 @@
 
 // Qt includes
 #include <QString>
-#include <QColor>
 #include <QTcpSocket>
 #include <QTimer>
-#include <QMap>
 #include <QHostAddress>
-
-// hyperion util
-#include "Image.h"
-#include "ColorRgb.h"
-
 #include <flatbuffers/flatbuffers.h>
+#include "Image.h"
 
 const int FLATBUFFER_DEFAULT_PORT = 19400;
 
@@ -62,7 +56,7 @@ public slots:
 	/// @brief Set the leds according to the given image
 	/// @param image The image
 	///
-	void setImage(const Image<ColorRgb> &image);
+	void setImage(const Image<ColorRgba> &image);
 
 signals:
 
