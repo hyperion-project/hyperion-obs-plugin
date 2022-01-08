@@ -28,8 +28,8 @@ For an example, you can participate in the translation.<br>
 See [Release Page](https://github.com/hyperion-project/hyperion-obs-plugin/releases)
 
 ## Build
-### Windows
-First follow the build guide for [OBS Studio][obs_build].
+### Windows & macOS (64-bit)
+First follow the build instructions for OBS-Studio on [Windows][obs_build_windows]/[macOS][obs_build_macos].
 - Add the following entries before the first configuration:
 
 | Entry name         | Type     | Value (e.g.)            |
@@ -39,11 +39,11 @@ First follow the build guide for [OBS Studio][obs_build].
 
 - This should cause the plugin DLL file to be created in the desired development environment.
 
-### Linux
-- Install QT and libobs
+### Linux (64-bit)
+- Install Git, CMake, QT5 and libobs
 
 ```
-sudo apt install qtbase5-dev libobs-dev
+sudo apt install git cmake qtbase5-dev libobs-dev
 ```
 
 - Get OBS Studio source code
@@ -64,6 +64,7 @@ sudo make install
 ```
 
 [obs]: https://obsproject.com/
-[obs_build]: https://github.com/obsproject/obs-studio/wiki/install-instructions#windows-build-directions
+[obs_build_windows]: https://github.com/obsproject/obs-studio/wiki/install-instructions#windows-build-directions
+[obs_build_macos]: https://github.com/obsproject/obs-studio/wiki/install-instructions#macos
 [hyperion]: https://github.com/hyperion-project/hyperion.ng
 [m-seker]: https://github.com/m-seker

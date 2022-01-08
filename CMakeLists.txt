@@ -70,6 +70,10 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
 	SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${qt_module_path}")
 endif()
 
+if(APPLE AND EXISTS /usr/local/opt/qt@5)
+	list(APPEND CMAKE_PREFIX_PATH "/usr/local/opt/qt@5")
+endif()
+
 if(NOT EXISTS ${OBS_SOURCE})
 	if (DEFINED ENV{OBS_SOURCE})
 		set(OBS_SOURCE $ENV{OBS_SOURCE})
@@ -83,7 +87,7 @@ if(NOT EXISTS ${OBS_SOURCE})
 	message(FATAL_ERROR "OBS_SOURCE was not specified. Please specify the path to the OBS source.")
 endif()
 
-if (WIN32 AND NOT EXISTS ${OBS_BUILD})
+if (WIN32 OR APPLE AND NOT EXISTS ${OBS_BUILD})
 	message(FATAL_ERROR "OBS_BUILD was not specified. Please specify the path to the OBS build directory.")
 endif()
 
@@ -102,9 +106,24 @@ if (WIN32)
 	set(PLUGIN_ICON "${CMAKE_SOURCE_DIR}/resources/installer.ico")
 endif()
 
+if (APPLE)
+	set(LIBOBS_LIB "${OBS_BUILD}/libobs/libobs.dylib")
+	set(OBS_FRONTEND_LIB "${OBS_BUILD}/UI/obs-frontend-api/libobs-frontend-api.dylib")
+
+	set(BUNDLE_IDENTIFIER "com.hyperion-project.hyperion-obs")
+endif()
+
 include(cmake/FindLibObs.cmake)
 find_package(LibObs REQUIRED)
+
 find_package(Qt5 COMPONENTS Core Widgets Network REQUIRED)
+message(STATUS "Qt Version: ${Qt5Core_VERSION}")
+
+if (WIN32 OR APPLE)
+	if ("${Qt5Core_VERSION}" VERSION_LESS "5.15.2")
+		message( FATAL_ERROR "Your Qt version is to old! Minimum required 5.15.2" )
+	endif()
+endif()
 
 option(GLOBAL_INSTALLATION "Whether to install for all users (default: OFF)" OFF)
 
@@ -122,6 +141,10 @@ endif()
 
 if (WIN32)
 	configure_file(package/Windows.iss.in ${CMAKE_BINARY_DIR}/Windows.iss)
+endif()
+
+if (APPLE)
+	configure_file(package/macOS.pkgproj.in ${CMAKE_BINARY_DIR}/macOS.pkgproj)
 endif()
 
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "Build shared flatbuffers library")
@@ -160,12 +183,16 @@ add_library(${PROJECT_NAME} MODULE
 	${FLATBUFFERS_HEADER}
 )
 
-if (UNIX)
+if (UNIX AND NOT APPLE)
 	target_link_libraries(${PROJECT_NAME} libobs)
 endif()
 
 if (WIN32)
 	target_link_libraries(${PROJECT_NAME} ${PTHREAD_LIB} ${LIBOBS_LIB})
+endif()
+
+if (APPLE)
+	target_link_libraries(${PROJECT_NAME} ${LIBOBS_LIB})
 endif()
 
 target_link_libraries(${PROJECT_NAME}
@@ -176,7 +203,7 @@ target_link_libraries(${PROJECT_NAME}
 	Qt5::Network
 )
 
-if (UNIX)
+if (UNIX AND NOT APPLE)
 	include(GNUInstallDirs)
 	set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
 
@@ -188,5 +215,34 @@ if (UNIX)
 		# Installs into home directory
 		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "$ENV{HOME}/.config/obs-studio/plugins/${PROJECT_NAME}/bin/64bit")
 		install(DIRECTORY locale/ DESTINATION "$ENV{HOME}/.config/obs-studio/plugins/${PROJECT_NAME}/data/locale")
+	endif()
+endif()
+
+if (APPLE)
+	set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
+	add_custom_command(
+		TARGET ${PROJECT_NAME} POST_BUILD
+		COMMAND install_name_tool
+			-change @rpath/libobs.0.dylib @executable_path/../Frameworks/libobs.0.dylib
+			-change @rpath/libobs-frontend-api.dylib @executable_path/../Frameworks/libobs-frontend-api.dylib
+			-change ${CMAKE_PREFIX_PATH}/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore
+			-change @rpath/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore
+			-change ${CMAKE_PREFIX_PATH}/lib/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui
+			-change @rpath/QtGui.framework/Versions/5/QtGui @executable_path/../Frameworks/QtGui.framework/Versions/5/QtGui
+			-change ${CMAKE_PREFIX_PATH}/lib/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+			-change @rpath/QtNetwork.framework/Versions/5/QtNetwork @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork
+			-change ${CMAKE_PREFIX_PATH}/lib/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets
+			-change @rpath/QtWidgets.framework/Versions/5/QtWidgets @executable_path/../Frameworks/QtWidgets.framework/Versions/5/QtWidgets
+			$<TARGET_FILE:${PROJECT_NAME}>
+	)
+
+	if (GLOBAL_INSTALLATION)
+		# Install for all user
+		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/bin/")
+		install(DIRECTORY locale/ DESTINATION "/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/data/locale")
+	else()
+		# Install into home directory
+		install(TARGETS ${PROJECT_NAME} LIBRARY DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/bin/")
+		install(DIRECTORY locale/ DESTINATION "$ENV{HOME}/Library/Application Support/obs-studio/plugins/${PROJECT_NAME}/data/locale")
 	endif()
 endif()
