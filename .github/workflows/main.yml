@@ -73,8 +73,8 @@ jobs:
         if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
         uses: actions/upload-artifact@v2
         with:
-          name: ${{ env.PLUGIN_NAME }}
-          path: ${{ github.workspace }}/plugin
+          name: '${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.linux.x64'
+          path: ${{ github.workspace }}/plugin/*.deb
 
   windows:
     name: 'Windows 64-bit'
