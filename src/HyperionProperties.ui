@@ -171,7 +171,7 @@
     <item>
      <widget class="QPlainTextEdit" name="LogText">
       <property name="enabled">
-       <bool>false</bool>
+       <bool>true</bool>
       </property>
       <property name="sizePolicy">
        <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
