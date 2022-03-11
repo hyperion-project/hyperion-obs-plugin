@@ -63,6 +63,10 @@ make -j $(nproc)
 sudo make install
 ```
 
+## License
+The source is released under MIT-License (see https://opensource.org/licenses/MIT).<br>
+[![GitHub license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://raw.githubusercontent.com/hyperion-project/hyperion-obs-plugin/main/LICENSE)
+
 [obs]: https://obsproject.com/
 [obs_build_windows]: https://github.com/obsproject/obs-studio/wiki/install-instructions#windows-build-directions
 [obs_build_macos]: https://github.com/obsproject/obs-studio/wiki/install-instructions#macos
