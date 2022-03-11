@@ -78,7 +78,7 @@ jobs:
 
   windows:
     name: 'Windows 64-bit'
-    runs-on: [windows-latest]
+    runs-on: [windows-2019]
     env:
       QT_VERSION: '5.15.2'
       WINDOWS_DEPS_VERSION: '2019'
@@ -317,7 +317,8 @@ jobs:
         run: |
           curl -L -O http://s.sudre.free.fr/Software/files/Packages.dmg
           sudo hdiutil attach ./Packages.dmg
-          sudo installer -pkg /Volumes/Packages\ 1.2.9/Install\ Packages.pkg -target /
+          pushd /Volumes/Packages*
+          sudo installer -pkg ./Install\ Packages.pkg -target /
 
       - name: 'Package hyperion-obs'
         working-directory: ${{ github.workspace }}/build
