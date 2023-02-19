@@ -1,5 +1,5 @@
-#define AppName "@CMAKE_PROJECT_NAME@"
-#define AppVersion "@PLUGIN_VERSION@"
+#define AppName "@PROJECT_FULL_NAME@"
+#define AppVersion "@PROJECT_VERSION@"
 #define AppPublisher "@PLUGIN_AUTHOR@"
 #define AppURL "https://github.com/hyperion-project/@PLUGIN_GIT@"
 #define AppCopyright "Copyright (c) 2014-2021 Hyperion Project"
@@ -10,6 +10,8 @@
 ; NOTE: The value of AppId uniquely identifies this application.
 ; Do not use the same AppId value in installers for other applications.
 ; (To generate a new GUID, click Tools | Generate GUID inside the IDE.)
+
+; app Information
 AppId=604e2ddf-34f0-4a97-9095-5a5ca097c846
 AppName={#AppName}
 AppVersion={#AppVersion}
@@ -18,13 +20,24 @@ AppPublisherURL={#AppURL}
 AppSupportURL={#AppURL}
 AppUpdatesURL={#AppURL}
 AppCopyright={#AppCopyright}
+
+; Other Information
 LicenseFile={#AppLicense}
 DefaultDirName={code:GetDirName}
+DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes
-OutputBaseFilename={#AppName}.{#AppVersion}.windows.installer
-SetupIconFile={#AppIcon}
-Compression=lzma
+OutputBaseFilename={#AppName}-{#AppVersion}-windows-installer
+DirExistsWarning=no
+
+; Compression
+Compression=lzma2/ultra64
 SolidCompression=yes
+LZMAAlgorithm=1
+
+; Wizard Information
+WizardStyle=modern
+WizardResizable=yes
+SetupIconFile={#AppIcon}
 
 [Languages]
 Name: "en"; MessagesFile: "compiler:Default.isl"
@@ -43,8 +56,8 @@ Name: "sk"; MessagesFile: "compiler:Languages\Slovak.isl"
 Name: "tr"; MessagesFile: "compiler:Languages\Turkish.isl"
 
 [Files]
-Source: "..\release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "..\LICENSE"; Flags: dontcopy
+Source: "release\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "LICENSE"; Flags: dontcopy
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]
@@ -64,16 +77,24 @@ begin
     WizardForm.NextButton.Caption := SetupMessage(msgButtonNext);
 end;
 
-// credit where it's due :
-// following function come from https://github.com/Xaymar/obs-studio_amf-encoder-plugin/blob/master/%23Resources/Installer.in.iss#L45
 function GetDirName(Value: string): string;
 var
   InstallPath: string;
 begin
   // initialize default path, which will be returned when the following registry
   // key queries fail due to missing keys or for some different reason
-  Result := '{pf}\obs-studio';
+  Result := ExpandConstant('{pf}\obs-studio');
   // query the first registry value; if this succeeds, return the obtained value
   if RegQueryStringValue(HKLM32, 'SOFTWARE\OBS Studio', '', InstallPath) then
     Result := InstallPath
+end;
+
+function NextButtonClick(PageId: Integer): Boolean;
+begin
+    Result := True;
+    if (PageId = wpSelectDir) and not FileExists(ExpandConstant('{app}\bin\64bit\obs64.exe')) then begin
+        MsgBox('OBS Studio (bin\64bit\obs64.exe) does not seem to be installed in that folder.  Please select the correct folder.', mbError, MB_OK);
+        Result := False;
+        exit;
+    end;
 end;

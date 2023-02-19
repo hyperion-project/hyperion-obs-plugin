@@ -1,3 +1,4 @@
 # .gitignore
 build/
 .vscode
+version.h

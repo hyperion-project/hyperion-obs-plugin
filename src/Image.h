@@ -1,6 +1,6 @@
 #pragma once
 
-#include <src/ImageData.h>
+#include "ImageData.h"
 
 // QT includes
 #include <QExplicitlySharedDataPointer>

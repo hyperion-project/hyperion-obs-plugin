@@ -139,14 +139,14 @@ void HyperionProperties::onStop()
 	hyperion_stop_streaming();
 }
 
-void HyperionProperties::OnStartSignal(void *data, calldata_t *cd)
+void HyperionProperties::OnStartSignal(void *data, calldata_t *)
 {
 	auto page = (HyperionProperties *)data;
 	page->clearLog();
 	page->enableStart(false);
 }
 
-void HyperionProperties::OnStopSignal(void *data, calldata_t *cd)
+void HyperionProperties::OnStopSignal(void *data, calldata_t *)
 {
 	auto page = (HyperionProperties *)data;
 	page->enableStart(true);

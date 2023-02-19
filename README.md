@@ -27,48 +27,24 @@ For an example, you can participate in the translation.<br>
 
 See [Release Page](https://github.com/hyperion-project/hyperion-obs-plugin/releases)
 
-## Build
-### Windows & macOS (64-bit)
-First follow the build instructions for OBS-Studio on [Windows][obs_build_windows]/[macOS][obs_build_macos].
-- Add the following entries before the first configuration:
+## Build (Windows/macOS/Linux)
+1. In-tree build:
+   - First follow the build instructions for OBS-Studio: [https://obsproject.com/wiki/Install-Instructions][obs_build]
+   - Install Flatbuffers: [https://google.github.io/flatbuffers/flatbuffers_guide_building.html][flatbuffers]
+   - Check out this repository to plugins/hyperion-obs
+   - Append `add_subdirectory(hyperion-obs)` to plugins/CMakeLists.txt
+   - Rebuild OBS Studio
 
-| Entry name         | Type     | Value (e.g.)            |
-|--------------------|----------|-------------------------|
-| OBS_SOURCE         | PATH     | /obs-studio             |
-| OBS_BUILD          | PATH     | /obs-studio/build       |
-
-- This should cause the plugin DLL file to be created in the desired development environment.
-
-### Linux (64-bit)
-- Install Git, CMake, QT5 and libobs
-
-```
-sudo apt install git cmake qtbase5-dev libobs-dev
-```
-
-- Get OBS Studio source code
-
-```
-git clone --recursive https://github.com/obsproject/obs-studio.git
-```
-
-- Build plugin
-
-```
-git clone --recursive https://github.com/hyperion-project/hyperion-obs-plugin.git
-cd hyperion-obs-plugin
-mkdir build && cd build
-cmake -DOBS_SOURCE=../../obs-studio ..
-make -j $(nproc)
-sudo make install
-```
+2. Stand-alone build (Linux only):
+    - Verify that you have package with development files for OBS
+    - Check out this repository and run `cmake -S . -B build -DBUILD_OUT_OF_TREE=On && cmake --build build`
 
 ## License
 The source is released under MIT-License (see https://opensource.org/licenses/MIT).<br>
 [![GitHub license](https://img.shields.io/badge/License-MIT-yellow.svg)](https://raw.githubusercontent.com/hyperion-project/hyperion-obs-plugin/main/LICENSE)
 
 [obs]: https://obsproject.com/
-[obs_build_windows]: https://github.com/obsproject/obs-studio/wiki/install-instructions#windows-build-directions
-[obs_build_macos]: https://github.com/obsproject/obs-studio/wiki/install-instructions#macos
+[obs_build]: https://obsproject.com/wiki/Install-Instructions
+[flatbuffers]: https://google.github.io/flatbuffers/flatbuffers_guide_building.html
 [hyperion]: https://github.com/hyperion-project/hyperion.ng
 [m-seker]: https://github.com/m-seker

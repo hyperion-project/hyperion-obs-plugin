@@ -2,361 +2,357 @@ name: hyperion-obs
 on: [push, pull_request]
 
 env:
-  PLUGIN_NAME: 'hyperion-obs'
+  PLUGIN_NAME: hyperion-obs
+  OBS_VERSION: 28.0.0-rc1
 
 jobs:
   linux:
-    name: 'Linux/Ubuntu 64-bit'
-    runs-on: ubuntu-latest
-    env:
-      MINIMUM_OBS_VERSION: 25.0.3
-      PROJECT_GIT: 'https://github.com/hyperion-project/hyperion-obs-plugin'
-      MAINTAINER: 'hyperion-project.org'
-
+    name: 'Linux'
+    runs-on: ${{ matrix.ubuntu }}
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu: ['ubuntu-20.04', 'ubuntu-22.04']
     steps:
-      - name: 'Checkout hyperion-obs'
-        uses: actions/checkout@v2
-        with:
-          path: ${{ github.workspace }}
-          submodules: 'true'
-
-      - name: 'Checkout OBS-Studio'
-        uses: actions/checkout@v2
+      - name: 'Checkout OBS Studio'
+        uses: actions/checkout@v3.3.0
         with:
           repository: obsproject/obs-studio
-          path: ${{ github.workspace }}/obs-studio
-          submodules: 'true'
+          ref: ${{ env.OBS_VERSION }}
+          submodules: 'recursive'
 
-      - name: 'Generate environment variables from .version'
-        shell: bash
-        run: echo "VERSION=$(tr -d '\n' < .version)" >> $GITHUB_ENV
-
-      - name: 'Install Dependencies'
-        shell: bash
-        run: |
-          sudo apt-get -qq update
-          sudo apt-get install -y \
-            libobs-dev \
-            git \
-            libc-dev-bin \
-            libc6-dev \
-            build-essential \
-            checkinstall \
-            cmake \
-            qtbase5-dev
-
-      - name: 'Build hyperion-obs'
-        shell: bash
-        run: |
-          cmake \
-            -S ${{ github.workspace }} \
-            -B ${{ github.workspace }}/build \
-            -G "Unix Makefiles" \
-            -DCMAKE_INSTALL_PREFIX=/usr \
-            -DOBS_SOURCE=${{ github.workspace }}/obs-studio \
-            -DGLOBAL_INSTALLATION=ON
-          sudo cmake --build ${{ github.workspace }}/build/ --parallel 4 --target install
-
-          cd ${{github.workspace}}/build
-          PAGER="cat" sudo checkinstall -y --type=debian --fstrans=no --nodoc \
-            --backup=no --deldoc=yes --install=no \
-            --pkgname=${{ env.PLUGIN_NAME }} --pkgversion=${{ env.VERSION }} \
-            --exclude="/usr/include/flatbuffers,/usr/bin,/usr/lib/x86_64-linux-gnu/cmake,/usr/lib/x86_64-linux-gnu/pkgconfig" \
-            --pkglicense="MIT" --maintainer="${{ env.MAINTAINER }}" \
-            --pkggroup="video" \
-            --pkgsource="${{ env.PROJECT_GIT }}" \
-            --requires="obs-studio \(\>= ${{ env.MINIMUM_OBS_VERSION }}\)" \
-            --pakdir="${{ github.workspace }}/plugin"
-          sudo mv ${{ github.workspace }}/plugin/*.deb ${{ github.workspace }}/plugin/${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.linux.x64.deb
-
-      - name: 'Upload hyperion-obs'
-        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v2
-        with:
-          name: '${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.linux.x64'
-          path: ${{ github.workspace }}/plugin/*.deb
-
-  windows:
-    name: 'Windows 64-bit'
-    runs-on: [windows-2019]
-    env:
-      QT_VERSION: '5.15.2'
-      WINDOWS_DEPS_VERSION: '2019'
-      CEF_WRAPPER: 'cef_binary_75.1.16+g16a67c4+chromium-75.0.3770.100_windows64_minimal'
-      CMAKE_GENERATOR: 'Visual Studio 16 2019'
-      CMAKE_SYSTEM_VERSION: '10.0'
-
-    steps:
       - name: 'Checkout hyperion-obs'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.3.0
         with:
-          path: ${{ github.workspace }}
-          submodules: 'recursive'
+          path: plugins/${{ env.PLUGIN_NAME }}
+          submodules: recursive
 
-      - name: 'Checkout OBS-Studio'
-        uses: actions/checkout@v2
-        with:
-          repository: obsproject/obs-studio
-          path: ${{ github.workspace }}/obs-studio
-          submodules: 'recursive'
-
-      - name: 'Generate environment variables from .version'
+      - name: 'Add hyperion-obs to plugins'
         shell: bash
-        run: echo "VERSION=$(tr -d '\n' < .version)" >> $GITHUB_ENV
+        run: echo "add_subdirectory(${{ env.PLUGIN_NAME }})" >> plugins/CMakeLists.txt
 
-      - name: 'Get OBS-Studio git info'
+      - name: 'Fetch hyperion-obs version'
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with: 
+          path: 'plugins/${{ env.PLUGIN_NAME }}/buildspec.json'
+          prop_path: 'version'
+
+      - name: 'Install OBS Studio dependencies'
+        run: CI/linux/01_install_dependencies.sh --disable-pipewire
+
+      - name: 'Configure and Build OBS Studio with hyperion-obs'
         shell: bash
-        working-directory: ${{ github.workspace }}/obs-studio
         run: |
-          git fetch --prune --unshallow
-          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
+          mkdir ./build
+          cmake -S . \
+            -B "./build" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+            -DLINUX_PORTABLE=OFF \
+            -DWITH_RTMPS=OFF \
+            -DBUILD_CAPTIONS=OFF \
+            -DBUILD_BROWSER=OFF \
+            -DBUILD_VIRTUALCAM=OFF \
+            -DBUILD_VST=OFF \
+            -DENABLE_NEW_MPEGTS_OUTPUT=OFF \
+            -DENABLE_AJA=OFF \
+            -DENABLE_PIPEWIRE=OFF \
+            -DENABLE_ALSA=OFF \
+            -DENABLE_V4L2=OFF \
+            -DENABLE_PULSEAUDIO=OFF \
+            -DENABLE_VLC=OFF \
+            -DENABLE_SCRIPTING=OFF \
+            -DENABLE_DECKLINK=OFF
+          cmake --build "./build"
 
-      - name: 'Checkout latest OBS-Studio release'
+      - name: 'Package'
         shell: bash
-        working-directory: ${{ github.workspace }}/obs-studio
         run: |
-          git checkout ${{ env.OBS_GIT_TAG }}
-          git submodule update
+          FILE_NAME=${{ env.PLUGIN_NAME }}.${{steps.version.outputs.propStr}}-${{ matrix.ubuntu }}.tar.gz
+          echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
+          mkdir -p ./${{ env.PLUGIN_NAME }}/bin/64bit/
+          mv ./build/plugins/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.so ./${{ env.PLUGIN_NAME }}/bin/64bit/${{ env.PLUGIN_NAME }}.so
+          mv ./plugins/${{ env.PLUGIN_NAME }}/data ./${{ env.PLUGIN_NAME }}/data
+          tar -cvzf "${FILE_NAME}" ${{ env.PLUGIN_NAME }}
 
-      - name: 'Install QT'
-        run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/Qt_${{ env.QT_VERSION }}.7z -f --retry 5 -C -
-          7z x Qt_${{ env.QT_VERSION }}.7z -o"${{ github.workspace }}\cmbuild\QT"
-
-      - name: 'Install pre-built OBS dependencies'
-        run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
-          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}\cmbuild\deps"
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/${{ env.CEF_WRAPPER }}.zip -f --retry 5 -C -
-          7z x ${{ env.CEF_WRAPPER }}.zip -o"${{ github.workspace }}\cmbuild"
-
-      - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v1.0.2
-
-      - name: 'Restore OBS build from cache'
-        id: build-cache-obs
-        uses: actions/cache@v1
-        with:
-          path: ${{ github.workspace }}\obs-studio\build
-          key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
-          restore-keys: ${{ runner.os }}-build-cache-obs-
-
-      - name: 'Configure OBS-Studio'
-        if: steps.build-cache-obs.outputs.cache-hit != 'true'
-        run: |
-          cmake `
-            -S ${{ github.workspace }}/obs-studio `
-            -B ${{ github.workspace }}/obs-studio/build `
-            -G "${{ env.CMAKE_GENERATOR }}" `
-            -A x64 `
-            -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" `
-            -DQTDIR="${{ github.workspace }}\cmbuild\QT\${{ env.QT_VERSION }}\msvc2019_64" `
-            -DDepsPath="${{ github.workspace }}\cmbuild\deps\win64" `
-            -DCEF_ROOT_DIR="${{ github.workspace }}\cmbuild\${{ env.CEF_WRAPPER }}" `
-            -DBUILD_CAPTIONS=YES `
-            -DCOPIED_DEPENDENCIES=NO `
-            -DCOPY_DEPENDENCIES=YES
-
-      - name: 'Build OBS-Studio'
-        if: steps.build-cache-obs.outputs.cache-hit != 'true'
-        working-directory: ${{ github.workspace }}/obs-studio
-        run: |
-          msbuild /m /p:Configuration=RelWithDebInfo .\build\libobs\libobs.vcxproj
-          msbuild /m /p:Configuration=RelWithDebInfo .\build\UI\obs-frontend-api\obs-frontend-api.vcxproj
-
-      - name: 'Configure hyperion-obs'
-        working-directory: ${{ github.workspace }}
-        run: |
-          cmake `
-            -S ${{ github.workspace }} `
-            -B ${{ github.workspace }}/build `
-            -G "${{ env.CMAKE_GENERATOR }}" `
-            -A x64 `
-            -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" `
-            -DOBS_SOURCE="${{ github.workspace }}\obs-studio" `
-            -DOBS_BUILD="${{ github.workspace }}\obs-studio\build"
-        env:
-          Qt5_DIR: ${{ github.workspace }}\cmbuild\QT\${{ env.QT_VERSION }}\msvc2019_64
-
-      - name: 'Build hyperion-obs'
-        working-directory: ${{ github.workspace }}/build
-        run: msbuild /m /p:Configuration=RelWithDebInfo .\${{ env.PLUGIN_NAME }}.sln
-        env:
-          Qt5_DIR: ${{ github.workspace }}\cmbuild\QT\${{ env.QT_VERSION }}\msvc2019_64
-
-      - name: 'Package hyperion-obs'
-        working-directory: ${{ github.workspace }}
-        run: |
-          mkdir release\obs-plugins\64bit
-          mkdir release\data\obs-plugins\${{ env.PLUGIN_NAME }}\
-          robocopy .\build\RelWithDebInfo .\release\obs-plugins\64bit\ ${{ env.PLUGIN_NAME }}.dll ${{ env.PLUGIN_NAME }}.pdb
-          robocopy /E .\locale .\release\data\obs-plugins\${{ env.PLUGIN_NAME }}\locale
-          iscc .\build\Windows.iss /O. /F"${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.windows.x64"
-
-      - name: Upload hyperion-obs
+      - name: 'Upload'
         if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.2
         with:
-          name: '${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.windows.x64'
-          path: ${{ github.workspace }}/*.exe
+          name: '${{ env.FILE_NAME }}'
+          path: '*.tar.gz'
 
   macos:
-    name: 'macOS 64-bit'
-    runs-on: [macos-latest]
+    name: macOS
+    runs-on: macos-12
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x86_64, arm64, universal]
     env:
-      QT_VERSION: '5.15.2'
-      MACOS_DEPS_VERSION: '2022-01-01'
-      ARCHITECTURE: 'x86_64'
-      MIN_MACOS_VERSION: '10.15'
-
+      MACOSX_DEPLOYMENT_TARGET: '10.15'  
+    defaults:
+      run:
+        shell: zsh {0}
     steps:
-      - name: 'Checkout hyperion-obs'
-        uses: actions/checkout@v2
-        with:
-          path: ${{ github.workspace }}
-          submodules: 'recursive'
-
-      - name: 'Checkout OBS-Studio'
-        uses: actions/checkout@v2
+      - name: 'Checkout OBS Studio'
+        uses: actions/checkout@v3.3.0
         with:
           repository: obsproject/obs-studio
-          path: ${{ github.workspace }}/obs-studio
+          ref: ${{ env.OBS_VERSION }}
           submodules: 'recursive'
 
-      - name: 'Generate environment variables from .version'
-        shell: bash
-        run: echo "VERSION=$(tr -d '\n' < .version)" >> $GITHUB_ENV
-
-      - name: 'Get OBS-Studio git info'
-        shell: bash
-        working-directory: ${{ github.workspace }}/obs-studio
-        run: |
-          git fetch --prune --unshallow
-          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
-
-      - name: 'Checkout latest OBS-Studio release'
-        shell: bash
-        working-directory: ${{ github.workspace }}/obs-studio
-        run: |
-          git checkout ${{ env.OBS_GIT_TAG }}
-          git submodule update
-
-      - name: 'Install prerequisites (Homebrew)'
-        working-directory: ${{ github.workspace }}/obs-studio
-        shell: bash
-        run: |
-          if [ -d /usr/local/opt/openssl@1.0.2t ]; then
-              brew uninstall openssl@1.0.2t
-              brew untap local/openssl
-          fi
-          if [ -d /usr/local/opt/python@2.7.17 ]; then
-              brew uninstall python@2.7.17
-              brew untap local/python2
-          fi
-          brew bundle --file ./CI/scripts/macos/Brewfile
-
-      - name: 'Install pre-built OBS dependencies'
-        working-directory: ${{ github.workspace }}/obs-studio
-        shell: bash
-        run: |
-          mkdir /tmp/obsdeps
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}-${{ env.ARCHITECTURE }}.tar.xz
-          tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}-${{ env.ARCHITECTURE }}.tar.xz -C "/tmp/obsdeps"
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-qt-${{ env.MACOS_DEPS_VERSION }}-${{ env.ARCHITECTURE }}.tar.xz
-          tar -xf ./macos-deps-qt-${{ env.MACOS_DEPS_VERSION }}-${{ env.ARCHITECTURE }}.tar.xz -C "/tmp/obsdeps"
-          xattr -r -d com.apple.quarantine /tmp/obsdeps
-
-      - name: 'Restore OBS build from cache'
-        id: build-cache-obs
-        uses: actions/cache@v1
+      - name: 'Checkout hyperion-obs'
+        uses: actions/checkout@v3.3.0
         with:
-          path: ${{ github.workspace }}\obs-studio\build
-          key: ${{ runner.os }}-build-cache-obs-${{ env.OBS_GIT_TAG }}
-          restore-keys: ${{ runner.os }}-build-cache-obs-
+          path: plugin
+          submodules: recursive
 
-      - name: 'Configure OBS-Studio'
-        if: steps.build-cache-obs.outputs.cache-hit != 'true'
-        shell: bash
+      - name: 'Setup Environment'
+        id: setup
+        working-directory: ${{ github.workspace }}/plugin
         run: |
-          cmake \
-            -S ${{ github.workspace }}/obs-studio \
-            -B ${{ github.workspace }}/obs-studio/build \
-            -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} \
-            -DQTDIR="/tmp/obsdeps" \
-            -DSWIGDIR="/tmp/obsdeps" \
-            -DDepsPath="/tmp/obsdeps" \
-            -DBUILD_BROWSER=OFF \
-            -DDISABLE_PYTHON=ON
+          ## SETUP ENVIRONMENT SCRIPT
+          print '::group::Clean Homebrew Environment'
+          typeset -a to_remove=()
+          for formula (speexdsp curl php) {
+            if [[ -d ${HOMEBREW_PREFIX}/opt/${formula} ]] to_remove+=(${formula})
+          }
+          if (( #to_remove > 0 )) brew uninstall --ignore-dependencies ${to_remove}
+          print '::endgroup::'
+          print "ccacheDate=$(date +"%Y-%m-%d")" >> $GITHUB_OUTPUT
 
-      - name: 'Build OBS-Studio'
-        if: steps.build-cache-obs.outputs.cache-hit != 'true'
-        working-directory: ${{ github.workspace }}/obs-studio/build
-        shell: bash
-        run: make -j $(sysctl -n hw.ncpu)
+      - name: 'Restore Compilation Cache'
+        id: ccache-cache
+        uses: actions/cache@v3.2.3
+        with:
+          path: ${{ github.workspace }}/.ccache
+          key: macos-${{ matrix.arch }}-ccache-plugin-${{ steps.setup.outputs.ccacheDate }}
+          restore-keys: macos-${{ matrix.arch }}-ccache-plugin
 
-      - name: 'Configure hyperion-obs'
-        working-directory: ${{ github.workspace }}
-        shell: bash
+      - name: 'Build native flatc compiler (only arm64)'
+        if: ${{ matrix.arch == 'arm64' }}
+        working-directory: ${{ github.workspace }}/plugin/external/flatbuffers
         run: |
-          cmake \
-            -S ${{ github.workspace }} \
-            -B ${{ github.workspace }}/build \
-            -G "Unix Makefiles" \
-            -DCMAKE_PREFIX_PATH=/tmp/obsdeps \
-            -DOBS_SOURCE=${{ github.workspace }}/obs-studio \
-            -DOBS_BUILD=${{ github.workspace }}/obs-studio/build
+          brew install cmake ninja
+          mkdir ./build_x86_64
+          cmake -S . \
+            -B "./build_x86_64" \
+            -G Ninja \
+            -DCMAKE_BUILD_TYPE="RelWithDebInfo" \
+            -DFLATBUFFERS_BUILD_TESTS=OFF \
+            -DBUILD_SHARED_LIBS=OFF \
+            -DFLATBUFFERS_BUILD_FLATLIB=OFF \
+            -DFLATBUFFERS_BUILD_FLATHASH=OFF \
+            -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/plugin/external/flatbuffers/build_x86_64 \
+            -DFLATBUFFERS_BUILD_FLATC=ON
+          cmake --build "./build_x86_64" --parallel $(( $(sysctl -n hw.ncpu) + 1 ))
+          cmake --install "./build_x86_64" --config RelWithDebInfo
+          echo "FLATC_EXECUTABLE=-DFLATBUFFERS_FLATC_EXECUTABLE:STRING=${{ github.workspace }}/plugin/external/flatbuffers/build_x86_64/bin/flatc" >> $GITHUB_ENV
 
-      - name: 'Build hyperion-obs'
-        working-directory: ${{ github.workspace }}/build
-        shell: bash
-        run: make -j $(sysctl -n hw.ncpu)
+      - name: 'Build'
+        uses: ./plugin/.github/actions/build-plugin
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+          config: RelWithDebInfo
+          additionalParams: ${{ env.FLATC_EXECUTABLE }}
 
-      - name: 'Install prerequisite Packages.app'
-        if: success()
-        shell: bash
-        run: |
-          curl -L -O http://s.sudre.free.fr/Software/files/Packages.dmg
-          sudo hdiutil attach ./Packages.dmg
-          pushd /Volumes/Packages*
-          sudo installer -pkg ./Install\ Packages.pkg -target /
+      - name: 'Package'
+        uses: ./plugin/.github/actions/package-plugin
+        with:
+          workingDirectory: ${{ github.workspace }}/plugin
+          target: ${{ matrix.arch }}
+          config: RelWithDebInfo
 
-      - name: 'Package hyperion-obs'
-        working-directory: ${{ github.workspace }}/build
-        run: |
-          packagesbuild --verbose macOS.pkgproj
-          mv ${{ env.PLUGIN_NAME }}.pkg ${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.macos.x64.pkg
-
-      - name: 'Upload hyperion-obs'
+      - name: 'Upload'
         if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.1
         with:
-          name: '${{ env.PLUGIN_NAME }}.${{ env.VERSION }}.macos.x64'
-          path: ${{ github.workspace }}/build/*.pkg
+          name: ${{ env.PLUGIN_NAME }}-macos-${{ matrix.arch }}
+          path: ${{ github.workspace }}/plugin/release/${{ env.PLUGIN_NAME }}-*-macos-${{ matrix.arch }}.pkg
+
+  windows-build:
+    name: 'Windows Build'
+    runs-on: [windows-latest]
+    strategy:
+      fail-fast: true
+      matrix:
+        target: [x64, x86]
+        include:
+          - target: x64
+            cmake_build: 'x64'
+            deps_ext: '64'
+          - target: x86
+            cmake_build: 'Win32'
+            deps_ext: '32'
+    env:
+      QT_VERSION: '6.3.1'
+      CMAKE_GENERATOR: "Visual Studio 17 2022"
+      CMAKE_SYSTEM_VERSION: "10.0.18363.657"
+      WINDOWS_DEPS_VERSION: '2022-08-02'
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.1.3
+
+      - name: 'Checkout OBS Studio'
+        uses: actions/checkout@v3.3.0
+        with:
+          repository: obsproject/obs-studio
+          ref: ${{ env.OBS_VERSION }}
+          submodules: 'recursive'
+
+      - name: 'Checkout hyperion-obs'
+        uses: actions/checkout@v3.3.0
+        with:
+          path: plugins/${{ env.PLUGIN_NAME}}
+          submodules: recursive
+
+      - name: 'Add hyperion-obs to OBS Studio plugins'
+        shell: cmd
+        run: echo add_subdirectory(${{ env.PLUGIN_NAME }}) >> plugins/CMakeLists.txt
+
+      - name: 'Install OBS Studio dependencies'
+        run: |
+          curl -kLO https://github.com/obsproject/obs-deps/releases/download/${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-qt6-${{ env.WINDOWS_DEPS_VERSION }}-${{ matrix.target }}.zip -f --retry 5 -C -
+          curl -kLO https://github.com/obsproject/obs-deps/releases/download/${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}-${{ matrix.target }}.zip -f --retry 5 -C -
+          7z x windows-deps-qt6-${{ env.WINDOWS_DEPS_VERSION }}-${{ matrix.target }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+          7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}-${{ matrix.target }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+
+      - name: 'Configure and build OBS Studio with hyperion-obs'
+        run: |
+          mkdir ./build
+          cmake -S . `
+            -B "${{ github.workspace }}/build" `
+            -G"${{ env.CMAKE_GENERATOR }}" `
+            -DCMAKE_PREFIX_PATH:PATH="${{ github.workspace }}/cmbuild/deps" `
+            -A"${{ matrix.cmake_build }}" `
+            -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" `
+            -DBUILD_BROWSER=FALSE `
+            -DBUILD_VST=FALSE `
+            -DBUILD_VIRTUALCAM=FALSE `
+            -DBUILD_CAPTIONS=FALSE `
+            -DCOMPILE_D3D12_HOOK=FALSE `
+            -DENABLE_SCRIPTING=FALSE `
+            -DDepsPath="${{ github.workspace }}/cmbuild/deps" `
+            -DDepsPath${{ matrix.deps_ext }}="${{ github.workspace }}/cmbuild/deps" `
+            -DQTDIR="${{ github.workspace }}/cmbuild/deps/qt6" `
+            -DCOPIED_DEPENDENCIES=FALSE `
+            -DCOPY_DEPENDENCIES=TRUE `
+            -DENABLE_PLUGINS=TRUE `
+            -DDISABLE_PLUGINS=FALSE `
+            -DENABLE_BROWSER=FALSE `
+            -DENABLE_WEBSOCKET=FALSE
+          msbuild /m /p:Configuration=RelWithDebInfo .\build\obs-studio.sln
+
+      - name: 'Prepare ${{ matrix.target }} build/installer files'
+        if: success()
+        run: |
+          mkdir ./package, ./installer
+          robocopy .\build\rundir\RelWithDebInfo\obs-plugins\${{ matrix.deps_ext }}bit\ .\package\obs-plugins\${{ matrix.deps_ext }}bit ${{ env.PLUGIN_NAME }}.* /E /XF .gitignore
+          robocopy .\build\rundir\RelWithDebInfo\data\obs-plugins\${{ env.PLUGIN_NAME }}\ .\package\data\obs-plugins\${{ env.PLUGIN_NAME }}\ /E /XF .gitignore
+          copy .\build\plugins\${{ env.PLUGIN_NAME }}\Windows.iss .\installer\Windows.iss
+          exit 0
+
+      - name: 'Publish ${{ matrix.target }} build files'
+        if: success()
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: 'windows-${{ matrix.target }}'
+          path: package/*
+
+      - name: 'Publish installer files'
+        if: success()
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: 'installer-files'
+          path: installer/*
+
+  windows-package:
+    name: 'Windows Package'
+    runs-on: [windows-latest]
+    needs: [windows-build]
+    steps:
+      - name: 'Checkout hyperion-obs'
+        uses: actions/checkout@v3.3.0
+
+      - name: 'Fetch hyperion-obs version'
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with: 
+          path: 'buildspec.json'
+          prop_path: 'version'
+
+      - name: 'Set environment variables'
+        run: |
+          mkdir ./release
+          $env:FILE_NAME="${{ env.PLUGIN_NAME }}-${{steps.version.outputs.prop}}-windows-x86_64"
+          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
+
+      - name: 'Retrieve x86 build files'
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: windows-x86
+          path: ./release
+
+      - name: 'Retrieve x64 build files'
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: windows-x64
+          path: ./release
+
+      - name: 'Retrieve installer files'
+        uses: actions/download-artifact@v3.0.2
+        with:
+          name: 'installer-files'
+          path: .
+
+      - name: 'Package'
+        run: iscc .\Windows.iss /O. /F"${{ env.FILE_NAME }}"
+
+      - name: 'Upload'
+        if: startsWith(github.event.ref, 'refs/tags') || github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v3.1.2
+        with:
+          name: '${{ env.FILE_NAME }}'
+          path: ./*.exe
+
+      - name: 'Remove temp artifacts'
+        uses: geekyeggo/delete-artifact@v2.0.0
+        with:
+          name: |
+            windows-x86
+            windows-x64
+            installer-files
 
   github_publish:
     name: 'Publish GitHub Releases'
     if: startsWith(github.event.ref, 'refs/tags')
-    needs: [linux, windows, macos]
+    needs: [linux, macos, windows-package]
     runs-on: ubuntu-latest
     steps:
       - name: 'Checkout hyperion-obs'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3.3.0
 
-      - name: Generate environment variables from .version
-        shell: bash
-        run: echo "VERSION=$(tr -d '\n' < .version)" >> $GITHUB_ENV
+      - name: 'Fetch hyperion-obs version'
+        id: version
+        uses: notiz-dev/github-action-json-property@release
+        with: 
+          path: 'buildspec.json'
+          prop_path: 'version'
 
       # Download artifacts from previous build process
-      - name: Download artifacts
-        uses: actions/download-artifact@v2
+      - name: 'Download artifacts'
+        uses: actions/download-artifact@v3.0.2
         with:
           path: artifacts
 
       # Create draft release and upload artifacts
-      - name: Create draft release
+      - name: 'Create draft release'
         uses: softprops/action-gh-release@v1
         with:
-          name: ${{ env.PLUGIN_NAME }} ${{ env.VERSION }}
+          name: ${{ env.PLUGIN_NAME }} ${{steps.version.outputs.propStr}}
           tag_name: ${{ env.TAG }}
           files: "artifacts/**"
           draft: true
