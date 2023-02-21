@@ -30,10 +30,11 @@ See [Release Page](https://github.com/hyperion-project/hyperion-obs-plugin/relea
 ## Build (Windows/macOS/Linux)
 1. In-tree build:
    - First follow the build instructions for OBS-Studio: [https://obsproject.com/wiki/Install-Instructions][obs_build]
-   - Install Flatbuffers: [https://google.github.io/flatbuffers/flatbuffers_guide_building.html][flatbuffers]
    - Check out this repository to plugins/hyperion-obs
    - Append `add_subdirectory(hyperion-obs)` to plugins/CMakeLists.txt
    - Rebuild OBS Studio
+
+   - Optional: Install [Flatbuffers][flatbuffers] as system library and use it with the CMake switch `-DUSE_SYSTEM_FLATBUFFERS_LIBS=ON`
 
 2. Stand-alone build (Linux only):
     - Verify that you have package with development files for OBS
